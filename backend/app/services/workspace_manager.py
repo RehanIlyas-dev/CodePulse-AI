@@ -45,6 +45,21 @@ class WorkspaceManager:
             raise HTTPException(status_code=400, detail=f"Failed to clone repository: {str(e)}")
 
     @staticmethod
+    def get_head_sha(repo_url: str) -> str:
+        # --> Retrieve the latest commit SHA of the repository's default branch
+        try:
+            result = subprocess.run(
+                ["git", "ls-remote", repo_url, "HEAD"],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=15
+            )
+            return result.stdout.decode().split("\t")[0].strip()
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to reach repository: {str(e)}")
+
+    @staticmethod
     def cleanup(target_dir: Path) -> None:
         # --> Delete the workspace folder after job execution
         if target_dir.exists():

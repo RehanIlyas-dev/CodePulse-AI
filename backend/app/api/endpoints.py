@@ -17,15 +17,23 @@ from app.services.tree_sitter_engine import UniversalTreeSitterEngine
 from app.services.websocket_manager import ws_manager
 from app.services.workspace_manager import WorkspaceManager
 from app.services.orchestrator import run_repo_analysis_pipeline
+from app.core.rate_limiter import RateLimiter
+from app.core.guardrails import PayloadGuardrails
 
 router = APIRouter(prefix="/api/v1", tags=["scans"])
 
 _background_tasks: set = set()
 
+# Shared rate limiter for job-submitting endpoints
+_rate_limiter = RateLimiter(requests_per_minute=10)
+
 
 # Endpoint to submit code for analysis (returns a job id immediately)
-@router.post("/analyze", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/analyze", status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(_rate_limiter)])
 async def analyze_code(request: ScanCreateRequest):
+    # --> Validate payload size and detect minified code
+    PayloadGuardrails.validate_code_snippet(request.code)
+
     # --> Validate code via local Tree-sitter
     ast_result = UniversalTreeSitterEngine.analyze(request.code, request.language)
 
@@ -106,7 +114,7 @@ async def get_scan_by_id(scan_id: uuid.UUID, db: AsyncSession = Depends(get_db))
 
     return scan
 
-@router.post("/analyze-repo", status_code=202)
+@router.post("/analyze-repo", status_code=202, dependencies=[Depends(_rate_limiter)])
 async def analyze_repository(
     background_tasks: BackgroundTasks,
     github_url: Optional[str] = Form(None),
@@ -115,9 +123,15 @@ async def analyze_repository(
     if not github_url and not file:
         raise HTTPException(status_code=400, detail="Provide either a github_url or a .zip file upload.")
 
+    # --> Validate zip payload before touching it
+    if file:
+        PayloadGuardrails.validate_zip_upload(file)
+
     # --> Compute cache key BEFORE any clone/extract (avoids wasted network work on cache hit)
     if github_url:
-        repo_hash = hashlib.sha256(github_url.strip().lower().encode("utf-8")).hexdigest()
+        # Key by commit SHA so repo changes invalidate the cache naturally
+        head_sha = WorkspaceManager.get_head_sha(github_url)
+        repo_hash = hashlib.sha256(f"{github_url.strip().lower()}:{head_sha}".encode("utf-8")).hexdigest()
         source = github_url
     else:
         zip_bytes = await file.read()

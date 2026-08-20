@@ -11,7 +11,24 @@ class ProjectParser:
         ".ts": "typescript",
         ".cpp": "cpp",
         ".c": "c",
-        ".java": "java"
+        ".h": "c",
+        ".hpp": "cpp",
+        ".java": "java",
+        ".go": "go",
+        ".rs": "rust",
+        ".rb": "ruby",
+        ".php": "php",
+        ".swift": "swift",
+        ".kt": "kotlin",
+        ".cs": "csharp",
+        ".sh": "bash",
+        ".sql": "sql",
+        ".html": "html",
+        ".css": "css",
+        ".json": "json",
+        ".yaml": "yaml",
+        ".yml": "yaml",
+        ".toml": "toml"
     }
 
     @classmethod
