@@ -1,22 +1,28 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import asyncio
+import uuid
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from typing import List
-import uuid
 
 from database import get_db
 from app.models.scan import CodeScan
 from app.schemas.scan import ScanCreateRequest, ScanResponse
+from app.services.cache_service import CacheService
+from app.services.job_service import JobService
+from app.services.orchestrator import run_analysis_pipeline
 from app.services.tree_sitter_engine import UniversalTreeSitterEngine
-from app.services.llm_engine import analyze_code_with_llm
-from app.services.report_formatter import format_analysis_report
+from app.services.websocket_manager import ws_manager
 
 router = APIRouter(prefix="/api/v1", tags=["scans"])
 
-# Endpoint to analyze code and store results
-@router.post("/analyze", response_model=ScanResponse, status_code=status.HTTP_201_CREATED)
-async def analyze_code(request: ScanCreateRequest, db: AsyncSession = Depends(get_db)):
-    # --> Execute local AST Static Analysis
+_background_tasks: set = set()
+
+
+# Endpoint to submit code for analysis (returns a job id immediately)
+@router.post("/analyze", status_code=status.HTTP_202_ACCEPTED)
+async def analyze_code(request: ScanCreateRequest):
+    # --> Validate code via local Tree-sitter
     ast_result = UniversalTreeSitterEngine.analyze(request.code, request.language)
 
     if not ast_result.get("supported"):
@@ -31,37 +37,50 @@ async def analyze_code(request: ScanCreateRequest, db: AsyncSession = Depends(ge
             detail=f"Syntax errors detected in the submitted {request.language} code."
         )
 
-    # --> Execute Structured AI Pipeline via Groq
-    try:
-        ai_result = await analyze_code_with_llm(request.code, ast_result)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Failed to process AI analysis: {str(e)}"
-        )
-
-    # --> Save combined analysis record to PostgreSQL
-    scan_record = CodeScan(
-        title=request.title,
-        language=request.language,
-        raw_code=request.code,
-        ast_metrics=ast_result,
-        time_complexity=ai_result.time_complexity,
-        space_complexity=ai_result.space_complexity,
-        security_score=ai_result.security_score,
-        maintainability_score=ai_result.maintainability_score,
-        refactored_code=ai_result.refactored_code,
-        issues_list=[issue.model_dump() for issue in ai_result.issues],
-        summary_text=format_analysis_report(
-            request.title, request.language, ast_result, ai_result
-        ),
+    # --> Kick off background analysis pipeline
+    code_hash = CacheService.generate_code_hash(request.code, request.language)
+    job_id = str(uuid.uuid4())
+    await JobService.create_job(job_id)
+    
+    task = asyncio.create_task(
+        run_analysis_pipeline(job_id, request.title, request.code, request.language, code_hash)
     )
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
-    db.add(scan_record)
-    await db.commit()
-    await db.refresh(scan_record)
+    return {
+        "job_id": job_id,
+        "status": "PENDING",
+        "websocket_url": f"/api/v1/ws/jobs/{job_id}",
+    }
 
-    return scan_record
+
+# Poll job status from Redis (fallback for non-WebSocket clients)
+@router.get("/jobs/{job_id}")
+async def get_job(job_id: str):
+    state = await JobService.get_job(job_id)
+    if not state:
+        raise HTTPException(status_code=404, detail="Job not found or expired.")
+    return state
+
+
+# WebSocket endpoint for live job progress
+@router.websocket("/ws/jobs/{job_id}")
+async def job_websocket(websocket: WebSocket, job_id: str):
+    await ws_manager.connect(job_id, websocket)
+    try:
+        # Send the current job state immediately on connect
+        state = await JobService.get_job(job_id)
+        if state:
+            await websocket.send_json({"job_id": job_id, **state})
+        # Keep the connection alive and detect disconnects
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(job_id)
+    except Exception:
+        ws_manager.disconnect(job_id)
+
 
 # --> Additional endpoints for retrieving scan records
 # 1. Get all scans with pagination
@@ -77,8 +96,8 @@ async def get_all_scans(limit: int = 10, offset: int = 0, db: AsyncSession = Dep
 async def get_scan_by_id(scan_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(CodeScan).filter(CodeScan.id == scan_id))
     scan = result.scalars().first()
-    
+
     if not scan:
         raise HTTPException(status_code=404, detail="Scan record not found.")
-    
+
     return scan
