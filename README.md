@@ -23,16 +23,10 @@ AI-powered  code analysis API. Submit code — or a whole GitHub repository / ZI
 
 ## Features
 
-- **Async job pipeline** — POST returns a `job_id` instantly (HTTP 202); analysis runs in a background task, progress streams live over WebSocket or via polling
-- **Single-file analysis** — paste code in any of 22 languages (Python, JS/TS, C/C++, Java, Go, Rust, Ruby, PHP, Swift, Kotlin, C#, Bash, SQL, HTML/CSS, JSON/YAML/TOML…) for syntax-tree metrics (lines, functions, cyclomatic complexity) with syntax-error detection before AI runs
-- **Repository analysis** — submit a GitHub URL **or** a `.zip` upload; the endpoint parses every file, builds a dependency graph, and audits the project as a whole (files, LOC, functions, average complexity + LLM report)
-- **Smart repo caching** — GitHub URLs are keyed by the latest commit SHA (`git ls-remote`), so unchanged repos short-circuit to `CACHE_HIT` instantly and pushed commits automatically invalidate the cache; ZIP uploads are content-addressed (byte hash)
-- **LLM code review** — time/space complexity, security & maintainability scores (0–100), typed issues (security / performance / bug / style) with line numbers and fix suggestions, refactored code
-- **Resilient AI layer** — 3 attempts with exponential backoff, 4xx fail-fast, invalid-JSON retry with prompt correction, structured logging
-- **Result caching** — identical code+language (or repo) short-circuits to `CACHE_HIT` (Redis, 24h TTL, no LLM call)
-- **Protection layer** — per-IP rate limiting (10 req/min on job endpoints), 500 KB code cap, minified-code detection, 10 MB ZIP cap, custom 422/500 error shapes
-- **Readable reports** — every scan stores a plain-text human-readable summary alongside structured JSON
-- **REST API** — create, list (paginated), fetch individual scans & repo scans, poll job status
+- **Async jobs** — submit, get a `job_id` instantly (202), stream progress over WebSocket or poll
+- **Multi-language analysis** — 22 languages; AST metrics (lines, functions, complexity) + LLM review (complexity, security & maintainability scores, issues with fixes, refactored code)
+- **Repository analysis** — GitHub URL or `.zip` upload; per-file metrics + dependency graph + project audit; commit-aware caching so unchanged repos hit instantly
+- **Protection layer** — rate limiting (10 req/min/IP), size caps, minified-code detection, clean error shapes
 
 ## Getting Started
 
