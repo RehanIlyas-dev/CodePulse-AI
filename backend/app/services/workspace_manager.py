@@ -4,7 +4,7 @@ import tempfile
 import zipfile
 import subprocess
 from pathlib import Path
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException
 
 class WorkspaceManager:
     @staticmethod
@@ -13,12 +13,10 @@ class WorkspaceManager:
         return Path(tempfile.mkdtemp(prefix="codepulse_repo_"))
 
     @staticmethod
-    async def extract_zip(file: UploadFile, target_dir: Path) -> Path:
+    async def extract_zip(zip_bytes: bytes, target_dir: Path) -> Path:
         # --> Extract the uploaded zip file to the target directory
         zip_path = target_dir / "upload.zip"
-        with open(zip_path, "wb") as buffer:
-            while chunk := await file.read(1024 * 1024):
-                buffer.write(chunk)
+        zip_path.write_bytes(zip_bytes)
 
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             for member in zip_ref.infolist():

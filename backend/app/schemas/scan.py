@@ -55,6 +55,7 @@ class RepoScanResponse(BaseModel):
     architecture_score: int
     maintainability_score: int
     refactored_suggestions: str
+    summary_text: str
 
     class Config:
         from_attributes = True

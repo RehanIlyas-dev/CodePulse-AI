@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, BackgroundTasks, UploadFile, File, Form
@@ -113,26 +114,43 @@ async def analyze_repository(
 ):
     if not github_url and not file:
         raise HTTPException(status_code=400, detail="Provide either a github_url or a .zip file upload.")
-    
+
+    # --> Compute cache key BEFORE any clone/extract (avoids wasted network work on cache hit)
+    if github_url:
+        repo_hash = hashlib.sha256(github_url.strip().lower().encode("utf-8")).hexdigest()
+        source = github_url
+    else:
+        zip_bytes = await file.read()
+        repo_hash = hashlib.sha256(zip_bytes).hexdigest()
+        source = "zip upload"
+
+    cached = await CacheService.get_cached_analysis(repo_hash, key_prefix="repo:")
+    if cached:
+        cached["cached"] = True
+        job_id = str(uuid.uuid4())
+        await JobService.create_job(job_id)
+        await JobService.update_job(job_id, "CACHE_HIT", 100, cached)
+        return {"status": "CACHE_HIT", "job_id": job_id, "websocket_url": f"/api/v1/ws/jobs/{job_id}"}
+
     sandbox_dir = WorkspaceManager.create_sandbox()
 
     try:
         if github_url:
             WorkspaceManager.clone_github_repo(github_url, sandbox_dir)
-        elif file:
-            await WorkspaceManager.extract_zip(file, sandbox_dir)
+        else:
+            await WorkspaceManager.extract_zip(zip_bytes, sandbox_dir)
 
         # Create Job and Register in Redis
         job_id = str(uuid.uuid4())
         await JobService.create_job(job_id)
 
         #  Dispatch Heavy Task to Background Worker
-        source = github_url if github_url else "zip upload"
         background_tasks.add_task(
             run_repo_analysis_pipeline,
             job_id=job_id,
             repo_path=sandbox_dir,
-            source=source
+            source=source,
+            repo_hash=repo_hash
         )
 
         return {"status": "PENDING", "job_id": job_id, "websocket_url": f"/api/v1/ws/jobs/{job_id}"}

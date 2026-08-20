@@ -18,7 +18,7 @@ class CacheService:
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     @staticmethod
-    async def get_cached_analysis(code_hash: str) -> Optional[Dict[str, Any]]:
+    async def get_cached_analysis(code_hash: str, key_prefix: str = "analysis:") -> Optional[Dict[str, Any]]:
        
         # Queries Redis for an existing analysis payload matching the SHA-256 code_hash.
         # Returns a parsed dictionary on a cache hit, or None on a cache miss.
@@ -26,7 +26,7 @@ class CacheService:
         if client is None:
             return None
 
-        cached_json = await client.get(f"analysis:{code_hash}")
+        cached_json = await client.get(f"{key_prefix}{code_hash}")
         if cached_json:
             return json.loads(cached_json)
         
@@ -36,7 +36,8 @@ class CacheService:
     async def set_cached_analysis(
         code_hash: str, 
         data: Dict[str, Any], 
-        ttl_seconds: int = 86400
+        ttl_seconds: int = 86400,
+        key_prefix: str = "analysis:"
     ) -> None:
         """
         Stores the analysis result dictionary in Redis serialized as JSON.
@@ -45,7 +46,7 @@ class CacheService:
         if _client() is not None:
             serialized_data = json.dumps(data)
             await _client().set(
-                name=f"analysis:{code_hash}",
+                name=f"{key_prefix}{code_hash}",
                 value=serialized_data,
                 ex=ttl_seconds
             )

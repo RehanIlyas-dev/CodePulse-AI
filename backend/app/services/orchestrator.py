@@ -9,7 +9,7 @@ from app.services.tree_sitter_engine import UniversalTreeSitterEngine
 from app.services.llm_engine import analyze_code_with_llm
 from app.services.cache_service import CacheService
 from app.services.job_service import JobService
-from app.services.report_formatter import format_analysis_report
+from app.services.report_formatter import format_analysis_report, format_repo_report
 from app.services.websocket_manager import ws_manager
 
 
@@ -97,7 +97,7 @@ async def run_analysis_pipeline(
         await JobService.update_job(job_id, "FAILED", 0, error_payload)
         await ws_manager.send_progress(job_id, "FAILED", 0, error_payload)
         
-async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str):
+async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str, repo_hash: str):
     """
     Background worker task for parsing and auditing an entire repository.
     """
@@ -130,6 +130,15 @@ async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str):
             architecture_score=ai_summary.security_score,
             maintainability_score=ai_summary.maintainability_score,
             refactored_suggestions=ai_summary.refactored_code,
+            summary_text=format_repo_report(
+                source=source,
+                summary=project_graph["summary"],
+                files=project_graph["files"],
+                dependency_graph=project_graph["dependency_graph"],
+                architecture_score=ai_summary.security_score,
+                maintainability_score=ai_summary.maintainability_score,
+                refactored_suggestions=ai_summary.refactored_code,
+            ),
         )
         async with AsyncSessionLocal() as db:
             db.add(repo_scan)
@@ -144,8 +153,12 @@ async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str):
             "files": project_graph["files"],
             "architecture_score": ai_summary.security_score,
             "maintainability_score": ai_summary.maintainability_score,
-            "refactored_suggestions": ai_summary.refactored_code
+            "refactored_suggestions": ai_summary.refactored_code,
+            "summary_text": repo_scan.summary_text,
         }
+
+        # --> Write Result to Redis Cache (24h TTL)
+        await CacheService.set_cached_analysis(repo_hash, response_payload, key_prefix="repo:")
 
         # Step 4: Finalize Job and Notify Websocket
         await JobService.update_job(job_id, "COMPLETED", 100, response_payload)
