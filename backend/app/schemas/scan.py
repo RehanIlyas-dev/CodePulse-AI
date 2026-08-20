@@ -42,3 +42,19 @@ class ScanResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# --> 3. Repository Analysis Schemas
+class RepoScanResponse(BaseModel):
+    id: uuid.UUID
+    created_at: datetime
+    source: str
+    summary: dict
+    dependency_graph: dict
+    files: dict
+    architecture_score: int
+    maintainability_score: int
+    refactored_suggestions: str
+
+    class Config:
+        from_attributes = True

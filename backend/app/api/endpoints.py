@@ -1,18 +1,21 @@
 import asyncio
 import uuid
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, BackgroundTasks, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from database import get_db
 from app.models.scan import CodeScan
-from app.schemas.scan import ScanCreateRequest, ScanResponse
+from app.models.repo_scan import RepoScan
+from app.schemas.scan import ScanCreateRequest, ScanResponse, RepoScanResponse
 from app.services.cache_service import CacheService
 from app.services.job_service import JobService
 from app.services.orchestrator import run_analysis_pipeline
 from app.services.tree_sitter_engine import UniversalTreeSitterEngine
 from app.services.websocket_manager import ws_manager
+from app.services.workspace_manager import WorkspaceManager
+from app.services.orchestrator import run_repo_analysis_pipeline
 
 router = APIRouter(prefix="/api/v1", tags=["scans"])
 
@@ -83,7 +86,7 @@ async def job_websocket(websocket: WebSocket, job_id: str):
 
 
 # --> Additional endpoints for retrieving scan records
-# 1. Get all scans with pagination
+# Get all scans with pagination
 @router.get("/scans", response_model=List[ScanResponse])
 async def get_all_scans(limit: int = 10, offset: int = 0, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
@@ -91,7 +94,7 @@ async def get_all_scans(limit: int = 10, offset: int = 0, db: AsyncSession = Dep
     )
     return result.scalars().all()
 
-# 2. Get a specific scan by its UUID
+# Get a specific scan by its UUID
 @router.get("/scans/{scan_id}", response_model=ScanResponse)
 async def get_scan_by_id(scan_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(CodeScan).filter(CodeScan.id == scan_id))
@@ -99,5 +102,61 @@ async def get_scan_by_id(scan_id: uuid.UUID, db: AsyncSession = Depends(get_db))
 
     if not scan:
         raise HTTPException(status_code=404, detail="Scan record not found.")
+
+    return scan
+
+@router.post("/analyze-repo", status_code=202)
+async def analyze_repository(
+    background_tasks: BackgroundTasks,
+    github_url: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None)
+):
+    if not github_url and not file:
+        raise HTTPException(status_code=400, detail="Provide either a github_url or a .zip file upload.")
+    
+    sandbox_dir = WorkspaceManager.create_sandbox()
+
+    try:
+        if github_url:
+            WorkspaceManager.clone_github_repo(github_url, sandbox_dir)
+        elif file:
+            await WorkspaceManager.extract_zip(file, sandbox_dir)
+
+        # Create Job and Register in Redis
+        job_id = str(uuid.uuid4())
+        await JobService.create_job(job_id)
+
+        #  Dispatch Heavy Task to Background Worker
+        source = github_url if github_url else "zip upload"
+        background_tasks.add_task(
+            run_repo_analysis_pipeline,
+            job_id=job_id,
+            repo_path=sandbox_dir,
+            source=source
+        )
+
+        return {"status": "PENDING", "job_id": job_id, "websocket_url": f"/api/v1/ws/jobs/{job_id}"}
+
+    except Exception as e:
+        WorkspaceManager.cleanup(sandbox_dir)
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# --> Repository scan history
+@router.get("/repo-scans", response_model=List[RepoScanResponse])
+async def get_all_repo_scans(limit: int = 10, offset: int = 0, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(RepoScan).order_by(RepoScan.created_at.desc()).offset(offset).limit(limit)
+    )
+    return result.scalars().all()
+
+# Get a specific repository scan by its UUID
+@router.get("/repo-scans/{scan_id}", response_model=RepoScanResponse)
+async def get_repo_scan_by_id(scan_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(RepoScan).filter(RepoScan.id == scan_id))
+    scan = result.scalars().first()
+
+    if not scan:
+        raise HTTPException(status_code=404, detail="Repo scan record not found.")
 
     return scan

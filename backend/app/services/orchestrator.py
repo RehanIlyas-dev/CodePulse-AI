@@ -1,5 +1,10 @@
+from pathlib import Path
+from app.services.workspace_manager import WorkspaceManager
+from app.services.project_parser import ProjectParser
+from app.services.dependency_builder import DependencyGraphBuilder
 from database import AsyncSessionLocal
 from app.models.scan import CodeScan
+from app.models.repo_scan import RepoScan
 from app.services.tree_sitter_engine import UniversalTreeSitterEngine
 from app.services.llm_engine import analyze_code_with_llm
 from app.services.cache_service import CacheService
@@ -91,3 +96,65 @@ async def run_analysis_pipeline(
         error_payload = {"error": str(e)}
         await JobService.update_job(job_id, "FAILED", 0, error_payload)
         await ws_manager.send_progress(job_id, "FAILED", 0, error_payload)
+        
+async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str):
+    """
+    Background worker task for parsing and auditing an entire repository.
+    """
+    try:
+        await JobService.update_job(job_id, "PARSING_FILES", 20)
+        await ws_manager.send_progress(job_id, "PARSING_FILES", 20)
+
+        parsed_data = ProjectParser.parse_repository(repo_path)
+
+        await JobService.update_job(job_id, "BUILDING_DEPENDENCY_GRAPH", 50)
+        await ws_manager.send_progress(job_id, "BUILDING_DEPENDENCY_GRAPH", 50)
+
+        project_graph = DependencyGraphBuilder.build_graph(parsed_data)
+
+        await JobService.update_job(job_id, "RUNNING_AI_AUDIT", 80)
+        await ws_manager.send_progress(job_id, "RUNNING_AI_AUDIT", 80)
+
+        # Compact summary passed to LLM instead of raw source code files
+        ai_summary = await analyze_code_with_llm(
+            code=f"Project Summary: {project_graph['summary']}",
+            ast_metrics={"language": "project_aggregate", "file_count": project_graph['summary']['total_files']}
+        )
+
+        # --> Persist repository scan to PostgreSQL
+        repo_scan = RepoScan(
+            source=source,
+            summary=project_graph["summary"],
+            dependency_graph=project_graph["dependency_graph"],
+            files=project_graph["files"],
+            architecture_score=ai_summary.security_score,
+            maintainability_score=ai_summary.maintainability_score,
+            refactored_suggestions=ai_summary.refactored_code,
+        )
+        async with AsyncSessionLocal() as db:
+            db.add(repo_scan)
+            await db.commit()
+            await db.refresh(repo_scan)
+
+        response_payload = {
+            "id": str(repo_scan.id),
+            "source": source,
+            "summary": project_graph["summary"],
+            "dependency_graph": project_graph["dependency_graph"],
+            "files": project_graph["files"],
+            "architecture_score": ai_summary.security_score,
+            "maintainability_score": ai_summary.maintainability_score,
+            "refactored_suggestions": ai_summary.refactored_code
+        }
+
+        # Step 4: Finalize Job and Notify Websocket
+        await JobService.update_job(job_id, "COMPLETED", 100, response_payload)
+        await ws_manager.send_progress(job_id, "COMPLETED", 100, response_payload)
+
+    except Exception as e:
+        error_payload = {"error": str(e)}
+        await JobService.update_job(job_id, "FAILED", 0, error_payload)
+        await ws_manager.send_progress(job_id, "FAILED", 0, error_payload)
+
+    finally:
+        WorkspaceManager.cleanup(repo_path)
