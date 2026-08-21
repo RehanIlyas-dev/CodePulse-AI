@@ -15,6 +15,8 @@ AI-powered  code analysis API. Submit code — or a whole GitHub repository / ZI
 | Cache / jobs          | Redis (redis-py async)                                              |
 | Validation            | Pydantic v2                                                         |
 | Protection            | Rate limiter (Redis), payload guardrails, global exception handlers |
+| Error tracking        | Sentry SDK (`sentry-sdk[fastapi]`)                                |
+| Testing               | pytest + pytest-asyncio + httpx (ASGI in-process)                   |
 | Dependency management | uv (pyproject.toml + uv.lock, venv at repo root)                    |
 
 ### Frontend (planned)
@@ -40,17 +42,16 @@ AI-powered  code analysis API. Submit code — or a whole GitHub repository / ZI
 ### Setup
 
 ```bash
-# 1. Install uv (dependency manager)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 2. Clone & sync dependencies (creates .venv at repo root from pyproject.toml)
 git clone <repo-url> && cd CodePulse-AI
 uv sync
 
-# 3. Environment variables (create backend/.env)
 GROQ_API_KEY=your_groq_key
 DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/postgres
 REDIS_URL=redis://localhost:6379/0
+# Optional — enables Sentry error tracking when present
+SENTRY_DSN=https://<key>@o<org>.ingest.sentry.io/<project>
 ```
 
 ### Run
@@ -61,6 +62,14 @@ cd backend
 ```
 
 Server starts at http://127.0.0.1:8000 — interactive docs at http://127.0.0.1:8000/docs.
+
+### Test
+
+```bash
+uv run pytest    # from the repo root — 7 tests, ASGI in-process, ~0.5s
+```
+
+Covers health, guardrails (unsupported language / payload size), job 404s, DB round-trips for both scan tables, and the rate limiter (429 past 10 req/min). Tests run the app's real lifespan via `asgi-lifespan` and never touch the real Sentry dashboard.
 
 ## API Reference
 
@@ -81,20 +90,17 @@ Both POST endpoints are rate-limited (10 requests/minute/IP) and validated by pa
 ### Example: analyze code (async flow)
 
 ```bash
-# 1. Submit — instant 202 with a job_id
+
 curl -s -X POST http://127.0.0.1:8000/api/v1/analyze \
   -H "Content-Type: application/json" \
   -d '{"title":"My scan","language":"python","code":"def add(a,b):\n    return a+b\n"}'
-# → {"job_id":"...","status":"PENDING","websocket_url":"/api/v1/ws/jobs/..."}
 
-# 2. Poll until COMPLETED
 curl -s http://127.0.0.1:8000/api/v1/jobs/<JOB_ID>
 ```
 
 ### Example: analyze a repository
 
 ```bash
-# By GitHub URL (cached per commit SHA — same commit = instant CACHE_HIT)
 curl -s -X POST http://127.0.0.1:8000/api/v1/analyze-repo \
   -F "github_url=https://github.com/RehanIlyas-dev/insta-daemon"
 
@@ -142,30 +148,35 @@ Repo scan jobs return `{files: {...}, summary: {...}}` plus a full-project `summ
 
 ```
 CodePulse-AI/
-├── pyproject.toml           
-├── uv.lock                 
+├── pyproject.toml         
+├── uv.lock               
+├── pytest.ini              
 ├── backend/
-│   ├── main.py               
-│   ├── database.py          
+│   ├── main.py             
+│   ├── database.py        
+│   ├── demo_test.py          
+│   ├── tests/
+│   │   ├── conftest.py        
+│   │   └── test_api.py        
 │   └── app/
 │       ├── api/endpoints.py   
 │       ├── core/
-│       │   ├── redis.py      
+│       │   ├── redis.py    
 │       │   ├── exceptions.py  
 │       │   ├── rate_limiter.py  
 │       │   └── guardrails.py   
-│       ├── models/scan.py    
+│       ├── models/scan.py  
 │       ├── models/repo_scan.py 
-│       ├── schemas/scan.py    
+│       ├── schemas/scan.py  
 │       └── services/
-│           ├── orchestrator.py     
+│           ├── orchestrator.py   
 │           ├── tree_sitter_engine.py 
 │           ├── project_parser.py   
 │           ├── dependency_builder.py 
 │           ├── workspace_manager.py 
-│           ├── llm_engine.py       
+│           ├── llm_engine.py     
 │           ├── cache_service.py   
-│           ├── job_service.py     
+│           ├── job_service.py   
 │           ├── websocket_manager.py  
 │           └── report_formatter.py   
 └── frontend/
@@ -180,6 +191,7 @@ CodePulse-AI/
 - [X] Backend: Redis caching (code-hash + commit-aware repo caching)
 - [X] Backend: repository analysis (GitHub URL / ZIP upload)
 - [X] Backend: protection layer (rate limiting, guardrails, error handlers)
+- [X] Backend: Sentry error tracking + pytest suite — **backend complete**
 - [ ] Frontend: React + Tailwind CSS UI
 - [ ] Auth (OAuth with Google/GitHub + JWT)
 
