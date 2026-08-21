@@ -1,6 +1,10 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+import sentry_sdk
+import os
 from fastapi.middleware.cors import CORSMiddleware
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
 from app.api.endpoints import router as api_router
 from app.core import redis as redis_module
 from app.core.exceptions import register_exception_handlers
@@ -20,6 +24,21 @@ async def lifespan(app: FastAPI):
     yield
     # Close the Redis client on shutdown
     await redis_module.close_redis()
+ 
+# --> SENTRY INITIALIZATION
+SENTRY_DSN = os.getenv("SENTRY_DSN")   
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            # Integrate with FastAPI and Starlette for error tracking
+            StarletteIntegration(transaction_style="endpoint"),
+            FastApiIntegration(transaction_style="endpoint"),
+        ],
+        traces_sample_rate=1.0,  # Traces sample rate for performance monitoring
+        profiles_sample_rate=1.0,
+        environment=os.getenv("ENVIRONMENT", "development"),
+    )
 
 app = FastAPI(title="CodePulse AI ", version="1.0.0", lifespan=lifespan)
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from datetime import datetime
 import uuid
@@ -40,8 +40,7 @@ class ScanResponse(BaseModel):
     issues_list: List[dict]
     summary_text: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # --> 3. Repository Analysis Schemas
@@ -57,5 +56,4 @@ class RepoScanResponse(BaseModel):
     refactored_suggestions: str
     summary_text: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

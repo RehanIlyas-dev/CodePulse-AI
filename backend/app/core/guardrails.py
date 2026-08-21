@@ -12,7 +12,7 @@ class PayloadGuardrails:
         code_bytes = code.encode("utf-8")
         if len(code_bytes) > MAX_CODE_LENGTH_BYTES:
             raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
                 detail="Payload size limit exceeded. Maximum code size allowed is 500 KB."
             )
 
@@ -41,6 +41,6 @@ class PayloadGuardrails:
 
         if file_size > MAX_ZIP_SIZE_BYTES:
             raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
                 detail="Archive size limit exceeded. Maximum zip size allowed is 10 MB."
             )

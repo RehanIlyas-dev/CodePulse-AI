@@ -19,4 +19,4 @@ async def close_redis():
     # Close the Redis client connection if it has been initialized
     global redis_client
     if redis_client:
-        await redis_client.close()
+        await redis_client.aclose()

@@ -1,4 +1,5 @@
 from pathlib import Path
+import sentry_sdk
 from app.services.workspace_manager import WorkspaceManager
 from app.services.project_parser import ProjectParser
 from app.services.dependency_builder import DependencyGraphBuilder
@@ -93,6 +94,13 @@ async def run_analysis_pipeline(
 
     except Exception as e:
         # Handle failures gracefully without crashing background threads
+        # Background exceptions are swallowed here, so report them to Sentry explicitly
+        with sentry_sdk.new_scope() as scope:
+            scope.set_tag("pipeline", "code_analysis")
+            scope.set_tag("job_id", job_id)
+            scope.set_extra("language", language)
+            sentry_sdk.capture_exception(e)
+
         error_payload = {"error": str(e)}
         await JobService.update_job(job_id, "FAILED", 0, error_payload)
         await ws_manager.send_progress(job_id, "FAILED", 0, error_payload)
@@ -165,6 +173,13 @@ async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str, 
         await ws_manager.send_progress(job_id, "COMPLETED", 100, response_payload)
 
     except Exception as e:
+        # Background exceptions are swallowed here, so report them to Sentry explicitly
+        with sentry_sdk.new_scope() as scope:
+            scope.set_tag("pipeline", "repo_analysis")
+            scope.set_tag("job_id", job_id)
+            scope.set_extra("source", source)
+            sentry_sdk.capture_exception(e)
+
         error_payload = {"error": str(e)}
         await JobService.update_job(job_id, "FAILED", 0, error_payload)
         await ws_manager.send_progress(job_id, "FAILED", 0, error_payload)
