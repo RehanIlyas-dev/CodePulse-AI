@@ -4,6 +4,8 @@ import RepoInput from './components/RepoInput';
 import JobProgress from './components/JobProgress';
 import ReportView from './components/ReportView';
 import RepoReportView from './components/RepoReportView';
+import LoginScreen from './components/LoginScreen';
+import HistoryView from './components/HistoryView';
 import { submitCodeAnalysis, submitRepoAnalysis, getJobStatus, API_BASE_URL, setToken, clearToken, fetchMe, tryRefresh, logoutServer } from './api/client';
 import { connectJobWebSocket } from './api/websocket';
 
@@ -15,6 +17,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [apiOnline, setApiOnline] = useState(null);
   const [me, setMe] = useState(null);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
   const socketRef = useRef(null);
 
@@ -35,6 +40,13 @@ export default function App() {
       // No stored token? Try the httpOnly refresh cookie before giving up
       if (!localStorage.getItem('cp_token')) await tryRefresh();
       setMe(await fetchMe());
+
+      // Returning from a failed/cancelled OAuth attempt -> show the Welcome page
+      const err = new URLSearchParams(window.location.search).get('auth_error');
+      if (err) {
+        setAuthError(err);
+        setShowWelcome(true);
+      }
     };
     boot();
   }, []);
@@ -112,8 +124,16 @@ export default function App() {
     runJob(submitRepoAnalysis(githubUrl, file));
 
   // The app is usable signed-out; only persistence requires an account
+  if (showWelcome) {
+    return <LoginScreen authError={authError} onClose={() => setShowWelcome(false)} />;
+  }
+
+  if (showHistory) {
+    return <HistoryView onClose={() => setShowHistory(false)} />;
+  }
+
   return (
-    <div className="min-h-screen bg-brand-bg flex flex-col font-sans">
+    <>
       {/* Top bar */}
       <header className="border-b border-brand-line bg-brand-surface/60 backdrop-blur sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
@@ -151,6 +171,12 @@ export default function App() {
                 )}
                 <span className="text-xs text-zinc-600 hidden sm:inline">{me.name || me.email}</span>
                 <button
+                  onClick={() => setShowHistory(true)}
+                  className="border border-brand-line hover:border-zinc-400 text-zinc-700 rounded-md px-2.5 py-1 transition-colors cursor-pointer"
+                >
+                  History
+                </button>
+                <button
                   onClick={handleLogout}
                   className="border border-brand-line hover:border-red-300 hover:text-red-500 rounded-md px-2 py-1 transition-colors cursor-pointer"
                 >
@@ -158,14 +184,12 @@ export default function App() {
                 </button>
               </span>
             ) : (
-              <span className="flex items-center gap-2">
-                <a
-                  href={`${API_BASE_URL}/auth/login/google`}
-                  className="border border-brand-line hover:border-zinc-400 text-zinc-700 rounded-md px-2.5 py-1 transition-colors"
-                >
-                  Sign in
-                </a>
-              </span>
+              <button
+                onClick={() => setShowWelcome(true)}
+                className="border border-brand-line hover:border-zinc-400 text-zinc-700 rounded-md px-2.5 py-1 transition-colors cursor-pointer"
+              >
+                Sign in
+              </button>
             )}
           </div>
         </div>
@@ -201,7 +225,7 @@ export default function App() {
           <span>localhost:8000/api/v1</span>
         </div>
       </footer>
-    </div>
+    </>
   );
 }
 
