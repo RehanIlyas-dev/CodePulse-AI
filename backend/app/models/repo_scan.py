@@ -25,4 +25,5 @@ class RepoScan(Base):
     architecture_score: Mapped[int] = mapped_column(Integer, nullable=False)
     maintainability_score: Mapped[int] = mapped_column(Integer, nullable=False)
     refactored_suggestions: Mapped[str] = mapped_column(Text, nullable=False)
+    issues_list: Mapped[list] = mapped_column(JSONB, default=list)
     summary_text: Mapped[str] = mapped_column(Text, nullable=False)

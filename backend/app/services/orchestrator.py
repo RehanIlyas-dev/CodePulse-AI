@@ -1,4 +1,5 @@
 from pathlib import Path
+import asyncio
 import sentry_sdk
 from app.services.workspace_manager import WorkspaceManager
 from app.services.project_parser import ProjectParser
@@ -42,7 +43,7 @@ async def run_analysis_pipeline(
             language=language
         )
 
-        # --> AI Audit via Groq LLM
+        # --> AI Audit via LLM
         await JobService.update_job(job_id, "RUNNING_AI_AUDIT", 65)
         await ws_manager.send_progress(job_id, "RUNNING_AI_AUDIT", 65)
 
@@ -108,22 +109,66 @@ async def run_analysis_pipeline(
 async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str, repo_hash: str):
     """
     Background worker task for parsing and auditing an entire repository.
+    Every supported file gets a full LLM analysis (bounded concurrency);
+    repos beyond MAX_LLM_FILES get deep analysis on the most complex files only.
     """
+    MAX_LLM_FILES = 20
+    MAX_FILE_CHARS = 50_000
+
     try:
         await JobService.update_job(job_id, "PARSING_FILES", 20)
         await ws_manager.send_progress(job_id, "PARSING_FILES", 20)
 
         parsed_data = ProjectParser.parse_repository(repo_path)
 
-        await JobService.update_job(job_id, "BUILDING_DEPENDENCY_GRAPH", 50)
-        await ws_manager.send_progress(job_id, "BUILDING_DEPENDENCY_GRAPH", 50)
+        await JobService.update_job(job_id, "BUILDING_DEPENDENCY_GRAPH", 35)
+        await ws_manager.send_progress(job_id, "BUILDING_DEPENDENCY_GRAPH", 35)
 
         project_graph = DependencyGraphBuilder.build_graph(parsed_data)
+        files = project_graph["files"]
 
-        await JobService.update_job(job_id, "RUNNING_AI_AUDIT", 80)
-        await ws_manager.send_progress(job_id, "RUNNING_AI_AUDIT", 80)
+        # --> Per-file deep AI audit (bounded concurrency)
+        sem = asyncio.Semaphore(3)
 
-        # Compact summary passed to LLM instead of raw source code files
+        async def analyze_one(rel_path: str, info: dict):
+            async with sem:
+                try:
+                    abs_path = Path(repo_path) / rel_path
+                    code = abs_path.read_text(encoding="utf-8", errors="ignore")[:MAX_FILE_CHARS]
+                    result = await analyze_code_with_llm(code=code, ast_metrics=info["metrics"])
+                    return rel_path, {
+                        "time_complexity": result.time_complexity,
+                        "space_complexity": result.space_complexity,
+                        "security_score": result.security_score,
+                        "maintainability_score": result.maintainability_score,
+                        "issues": [i.model_dump() for i in result.issues],
+                        "refactored_code": result.refactored_code,
+                    }
+                except Exception:
+                    # One bad file must not fail the whole repo job
+                    return rel_path, None
+
+        candidates = sorted(
+            files.keys(),
+            key=lambda p: files[p]["metrics"].get("cyclomatic_complexity", 1),
+            reverse=True,
+        )[:MAX_LLM_FILES]
+
+        await JobService.update_job(job_id, "RUNNING_AI_AUDIT", 40)
+        await ws_manager.send_progress(job_id, "RUNNING_AI_AUDIT", 40)
+
+        tasks = [asyncio.create_task(analyze_one(p, files[p])) for p in candidates]
+        completed_count = 0
+        for coro in asyncio.as_completed(tasks):
+            rel_path, ai = await coro
+            completed_count += 1
+            if ai:
+                files[rel_path]["ai"] = ai
+            progress = 40 + int(45 * completed_count / max(len(candidates), 1))
+            await JobService.update_job(job_id, "RUNNING_AI_AUDIT", progress)
+            await ws_manager.send_progress(job_id, "RUNNING_AI_AUDIT", progress)
+
+        # --> Aggregate project-wide audit (single compact-summary call)
         ai_summary = await analyze_code_with_llm(
             code=f"Project Summary: {project_graph['summary']}",
             ast_metrics={"language": "project_aggregate", "file_count": project_graph['summary']['total_files']}
@@ -138,6 +183,7 @@ async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str, 
             architecture_score=ai_summary.security_score,
             maintainability_score=ai_summary.maintainability_score,
             refactored_suggestions=ai_summary.refactored_code,
+            issues_list=[issue.model_dump() for issue in ai_summary.issues],
             summary_text=format_repo_report(
                 source=source,
                 summary=project_graph["summary"],
@@ -162,7 +208,7 @@ async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str, 
             "architecture_score": ai_summary.security_score,
             "maintainability_score": ai_summary.maintainability_score,
             "refactored_suggestions": ai_summary.refactored_code,
-            "summary_text": repo_scan.summary_text,
+            "issues_list": [issue.model_dump() for issue in ai_summary.issues],
         }
 
         # --> Write Result to Redis Cache (24h TTL)

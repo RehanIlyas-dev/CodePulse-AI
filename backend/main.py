@@ -6,9 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 from app.api.endpoints import router as api_router
+from app.api.auth import router as auth_router
 from app.core import redis as redis_module
 from app.core.exceptions import register_exception_handlers
 from database import engine, Base
+import app.models.user  
 
 @asynccontextmanager
 # Lifespan context manager to handle startup and shutdown events
@@ -51,6 +53,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+app.include_router(auth_router, prefix="/api/v1")
 
 register_exception_handlers(app)
 

@@ -19,6 +19,8 @@ from app.services.workspace_manager import WorkspaceManager
 from app.services.orchestrator import run_repo_analysis_pipeline
 from app.core.rate_limiter import RateLimiter
 from app.core.guardrails import PayloadGuardrails
+from app.core.security import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/api/v1", tags=["scans"])
 
@@ -30,7 +32,10 @@ _rate_limiter = RateLimiter(requests_per_minute=10)
 
 # Endpoint to submit code for analysis (returns a job id immediately)
 @router.post("/analyze", status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(_rate_limiter)])
-async def analyze_code(request: ScanCreateRequest):
+async def analyze_code(
+    request: ScanCreateRequest,
+    current_user: User = Depends(get_current_user),
+):
     # --> Validate payload size and detect minified code
     PayloadGuardrails.validate_code_snippet(request.code)
 
@@ -118,7 +123,8 @@ async def get_scan_by_id(scan_id: uuid.UUID, db: AsyncSession = Depends(get_db))
 async def analyze_repository(
     background_tasks: BackgroundTasks,
     github_url: Optional[str] = Form(None),
-    file: Optional[UploadFile] = File(None)
+    file: Optional[UploadFile] = File(None),
+    current_user: User = Depends(get_current_user),
 ):
     if not github_url and not file:
         raise HTTPException(status_code=400, detail="Provide either a github_url or a .zip file upload.")

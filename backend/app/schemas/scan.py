@@ -54,6 +54,7 @@ class RepoScanResponse(BaseModel):
     architecture_score: int
     maintainability_score: int
     refactored_suggestions: str
+    issues_list: list = Field(default=[])
     summary_text: str
 
     model_config = ConfigDict(from_attributes=True)

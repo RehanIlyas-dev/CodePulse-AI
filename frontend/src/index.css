@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #ebebee;
+  --color-brand-surface: #f6f6f7;
+  --color-brand-raised: #e1e1e4;
+  --color-brand-line: #d6d6da;
+  --color-brand-accent: #059669;
+  --color-brand-accent-strong: #047857;
+  --font-sans: "Menlo", "Monaco", "Cascadia Mono", "Consolas", ui-monospace, monospace;
+  --font-mono: "Menlo", "Monaco", "Cascadia Mono", "Consolas", ui-monospace, monospace;
+}
+
+body {
+  background-color: #ebebee;
+  color: #27272a;
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgba(5, 150, 105, 0.18);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 transparent;
+}
