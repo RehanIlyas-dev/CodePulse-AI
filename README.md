@@ -92,27 +92,27 @@ Covers health, guardrails (unsupported language / payload size), job 404s, DB ro
 
 ## API Reference
 
-| Method | Endpoint | Description |
-| ------ | -------- | ----------- |
-| GET | `/` | Health check |
-| POST | `/api/v1/analyze` | Analyze code snippet → `job_id` (202) |
-| POST | `/api/v1/analyze-repo` | GitHub URL or `.zip` upload (multipart) |
-| GET | `/api/v1/jobs/{job_id}` | Poll job status & result |
-| WS | `/api/v1/ws/jobs/{job_id}?token=<jwt>` | Live progress → full result |
-| GET | `/api/v1/scans` | List code scans (paginated) |
-| GET | `/api/v1/scans/{scan_id}` | Fetch code scan by UUID |
-| GET | `/api/v1/repo-scans` | List repo scans (paginated) |
-| GET | `/api/v1/repo-scans/{scan_id}` | Fetch repo scan by UUID |
+| Method | Endpoint                                 | Description                              |
+| ------ | ---------------------------------------- | ---------------------------------------- |
+| GET    | `/`                                    | Health check                             |
+| POST   | `/api/v1/analyze`                      | Analyze code snippet →`job_id` (202)  |
+| POST   | `/api/v1/analyze-repo`                 | GitHub URL or`.zip` upload (multipart) |
+| GET    | `/api/v1/jobs/{job_id}`                | Poll job status & result                 |
+| WS     | `/api/v1/ws/jobs/{job_id}?token=<jwt>` | Live progress → full result             |
+| GET    | `/api/v1/scans`                        | List code scans (paginated)              |
+| GET    | `/api/v1/scans/{scan_id}`              | Fetch code scan by UUID                  |
+| GET    | `/api/v1/repo-scans`                   | List repo scans (paginated)              |
+| GET    | `/api/v1/repo-scans/{scan_id}`         | Fetch repo scan by UUID                  |
 
 **Auth** (all `Authorization: Bearer <jwt>` unless noted):
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/login/{provider}` | Start OAuth (google\|github) |
-| GET | `/auth/callback/{provider}` | OAuth callback → 307 to `FRONTEND_URL/#token=...` |
-| POST | `/auth/refresh` | Refresh access token (reads httpOnly cookie) |
-| POST | `/auth/logout` | Clear refresh cookie |
-| GET | `/auth/me` | Current user profile |
+| Method | Endpoint                      | Description                                         |
+| ------ | ----------------------------- | --------------------------------------------------- |
+| POST   | `/auth/login/{provider}`    | Start OAuth (google\|github)                        |
+| GET    | `/auth/callback/{provider}` | OAuth callback → 307 to`FRONTEND_URL/#token=...` |
+| POST   | `/auth/refresh`             | Refresh access token (reads httpOnly cookie)        |
+| POST   | `/auth/logout`              | Clear refresh cookie                                |
+| GET    | `/auth/me`                  | Current user profile                                |
 
 **Auth notes:** Rate-limited (10 req/min/IP) on POST `/analyze` & `/analyze-repo`; OAuth: Google, GitHub (via opencode Zen); JWT access 30 min; httpOnly refresh cookie 30 days (rotated); WebSocket: append `?token=<jwt>`.
 
@@ -120,16 +120,16 @@ Covers health, guardrails (unsupported language / payload size), job 404s, DB ro
 
 ```
 CodePulse-AI/
-├── pyproject.toml       
-├── uv.lock             
-├── pytest.ini            
+├── pyproject.toml   
+├── uv.lock       
+├── pytest.ini      
 ├── backend/
-│   ├── main.py           
-│   ├── database.py      
-│   ├── demo_test.py        
+│   ├── main.py     
+│   ├── database.py  
+│   ├── demo_test.py  
 │   ├── tests/
-│   │   ├── conftest.py      
-│   │   └── test_api.py      
+│   │   ├── conftest.py  
+│   │   └── test_api.py  
 │   └── app/
 │       ├── api/endpoints.py   
 │       ├── core/
@@ -190,6 +190,6 @@ CodePulse-AI/
 - [ ] Production deployment (Docker, Fly.io / Railway / Render)
 - [ ] Sentry error tracking in production
 
-## License
+### Author
 
-Private project.
+Made with ❤️ by Rehan
