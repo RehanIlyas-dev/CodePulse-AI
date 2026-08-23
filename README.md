@@ -1,24 +1,24 @@
 # CodePulse AI
 
-AI-powered code analysis API. Submit code — or a whole GitHub repository / ZIP archive — and get an instant structural analysis (tree-sitter) combined with an LLM-generated review: complexity, security & maintainability scores, flagged issues with fixes, and refactored code. Analysis runs asynchronously with live progress over WebSocket.
+AI-powered code analysis . Submit code or a whole GitHub repository / ZIP archive  and get an instant structural analysis (tree-sitter) combined with an LLM-generated review: complexity, security & maintainability scores, flagged issues with fixes, and refactored code. Analysis runs asynchronously with live progress over WebSocket.
 
 ## Tech Stack
 
 ### Backend (implemented)
 
-| Layer                 | Technology                                                          |
-| --------------------- | ------------------------------------------------------------------- |
-| API framework         | FastAPI (async)                                                     |
-| ORM / database        | SQLAlchemy 2.0 (async) + PostgreSQL (asyncpg)                       |
-| Static analysis       | tree-sitter + tree-sitter-language-pack (18 supported languages)    |
-| LLM                   | opencode Zen — `nemotron-3-ultra-free` (structured JSON output)     |
-| Cache / jobs          | Redis (redis-py async)                                              |
-| Validation            | Pydantic v2                                                         |
-| Protection            | Rate limiter (Redis), payload guardrails, global exception handlers |
-| Error tracking        | Sentry SDK (`sentry-sdk[fastapi]`)                                  |
-| Auth                  | OAuth2 (Google + GitHub) via opencode Zen + JWT + httpOnly refresh  |
-| Testing               | pytest + pytest-asyncio + httpx (ASGI in-process)                   |
-| Dependency mgmt       | uv (pyproject.toml + uv.lock, venv at repo root)                    |
+| Layer           | Technology                                                          |
+| --------------- | ------------------------------------------------------------------- |
+| API framework   | FastAPI (async)                                                     |
+| ORM / database  | SQLAlchemy 2.0 (async) + PostgreSQL (asyncpg)                       |
+| Static analysis | tree-sitter + tree-sitter-language-pack (18 supported languages)    |
+| LLM             | opencode Zen —`nemotron-3-ultra-free` (structured JSON output)   |
+| Cache / jobs    | Redis (redis-py async)                                              |
+| Validation      | Pydantic v2                                                         |
+| Protection      | Rate limiter (Redis), payload guardrails, global exception handlers |
+| Error tracking  | Sentry SDK (`sentry-sdk[fastapi]`)                                |
+| Auth            | OAuth2 (Google + GitHub) via  JWT + httpOnly refresh               |
+| Testing         | pytest + pytest-asyncio + httpx (ASGI in-process)                   |
+| Dependency mgmt | uv (pyproject.toml + uv.lock, venv at repo root)                    |
 
 ### Frontend (implemented)
 
@@ -52,7 +52,7 @@ git clone <repo-url> && cd CodePulse-AI
 uv sync
 
 # backend/.env (create from template)
-LLM_API_KEY=your_opencode_zen_key
+LLM_API_KEY=your_model_key
 LLM_BASE_URL=https://opencode.ai/zen/v1
 LLM_MODEL=nemotron-3-ultra-free
 DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/postgres
@@ -92,102 +92,48 @@ Covers health, guardrails (unsupported language / payload size), job 404s, DB ro
 
 ## API Reference
 
-| Method | Endpoint                         | Description                                            |
-| ------ | -------------------------------- | ------------------------------------------------------ |
-| GET    | `/`                            | Health check                                           |
-| POST   | `/api/v1/analyze`              | Analyze a code snippet — returns`job_id` (HTTP 202) |
-| POST   | `/api/v1/analyze-repo`         | Analyze a GitHub URL or`.zip` upload (multipart)     |
-| GET    | `/api/v1/jobs/{job_id}`        | Poll job status & result (Redis-backed)                |
-| WS     | `/api/v1/ws/jobs/{job_id}`     | Live progress frames, then full result                 |
-| GET    | `/api/v1/scans`                | List code scans (paginated:`?limit=&offset=`)        |
-| GET    | `/api/v1/scans/{scan_id}`      | Fetch a single code scan by UUID                       |
-| GET    | `/api/v1/repo-scans`           | List repo scans (paginated)                            |
-| GET    | `/api/v1/repo-scans/{scan_id}` | Fetch a single repo scan by UUID                       |
-| POST   | `/auth/login/{provider}`       | Start OAuth flow (google|github)                       |
-| GET    | `/auth/callback/{provider}`    | OAuth callback                                         |
-| POST   | `/auth/refresh`                | Refresh access token (reads httpOnly cookie)           |
-| POST   | `/auth/logout`                 | Clear refresh cookie                                   |
-| GET    | `/auth/me`                     | Current user profile                                   |
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| GET | `/` | Health check |
+| POST | `/api/v1/analyze` | Analyze code snippet → `job_id` (202) |
+| POST | `/api/v1/analyze-repo` | GitHub URL or `.zip` upload (multipart) |
+| GET | `/api/v1/jobs/{job_id}` | Poll job status & result |
+| WS | `/api/v1/ws/jobs/{job_id}?token=<jwt>` | Live progress → full result |
+| GET | `/api/v1/scans` | List code scans (paginated) |
+| GET | `/api/v1/scans/{scan_id}` | Fetch code scan by UUID |
+| GET | `/api/v1/repo-scans` | List repo scans (paginated) |
+| GET | `/api/v1/repo-scans/{scan_id}` | Fetch repo scan by UUID |
 
-Both POST endpoints are rate-limited (10 requests/minute/IP) and validated by payload guardrails.
+**Auth** (all `Authorization: Bearer <jwt>` unless noted):
 
-### Example: analyze code (async flow)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/login/{provider}` | Start OAuth (google\|github) |
+| GET | `/auth/callback/{provider}` | OAuth callback → 307 to `FRONTEND_URL/#token=...` |
+| POST | `/auth/refresh` | Refresh access token (reads httpOnly cookie) |
+| POST | `/auth/logout` | Clear refresh cookie |
+| GET | `/auth/me` | Current user profile |
 
-```bash
-
-curl -s -X POST http://127.0.0.1:8000/api/v1/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"title":"My scan","language":"python","code":"def add(a,b):\n    return a+b\n"}'
-# → {"job_id":"...","status":"PENDING","websocket_url":"/api/v1/ws/jobs/..."}
-
-curl -s http://127.0.0.1:8000/api/v1/jobs/<JOB_ID>
-```
-
-### Example: analyze a repository
-
-```bash
-# By GitHub URL (cached per commit SHA — same commit = instant CACHE_HIT)
-curl -s -X POST http://127.0.0.1:8000/api/v1/analyze-repo \
-  -F "github_url=https://github.com/RehanIlyas-dev/insta-daemon"
-
-# By ZIP upload
-curl -s -X POST http://127.0.0.1:8000/api/v1/analyze-repo \
-  -F "file=@/path/to/project.zip"
-```
-
-Or stream live via WebSocket (final frame carries the full result):
-
-```python
-import asyncio, json, websockets
-
-async def main():
-    async with websockets.connect("ws://127.0.0.1:8000/api/v1/ws/jobs/<JOB_ID>?token=<JWT>") as ws:
-        while True:
-            m = json.loads(await ws.recv())
-            print(f"{m['status']} {m['progress']}%")
-            if m["status"] in ("COMPLETED", "CACHE_HIT", "FAILED"):
-                break
-asyncio.run(main())
-```
-
-### Result payload (from COMPLETED frame)
-
-```json
-{
-  "id": "a31ea00f-5979-491a-9f11-cb8b1bea706e",
-  "language": "python",
-  "ast_metrics": { "total_lines": 2, "function_count": 1, "cyclomatic_complexity": 2, "has_syntax_errors": false },
-  "time_complexity": "O(1)",
-  "space_complexity": "O(1)",
-  "security_score": 95,
-  "maintainability_score": 90,
-  "issues_list": [],
-  "refactored_code": "def add(a, b):\n    return a + b",
-  "summary_text": "CODE PULSE - CODE ANALYSIS REPORT\n...",
-  "cached": false
-}
-```
-
-Repo scan jobs return `{files: {...}, summary: {...}}` plus a full-project `summary_text`.
+**Auth notes:** Rate-limited (10 req/min/IP) on POST `/analyze` & `/analyze-repo`; OAuth: Google, GitHub (via opencode Zen); JWT access 30 min; httpOnly refresh cookie 30 days (rotated); WebSocket: append `?token=<jwt>`.
 
 ## Project Structure
 
 ```
 CodePulse-AI/
-├── pyproject.toml         
-├── uv.lock               
-├── pytest.ini              
+├── pyproject.toml       
+├── uv.lock             
+├── pytest.ini            
 ├── backend/
-│   ├── main.py             
-│   ├── database.py        
-│   ├── demo_test.py          
+│   ├── main.py           
+│   ├── database.py      
+│   ├── demo_test.py        
 │   ├── tests/
-│   │   ├── conftest.py        
-│   │   └── test_api.py        
+│   │   ├── conftest.py      
+│   │   └── test_api.py      
 │   └── app/
 │       ├── api/endpoints.py   
 │       ├── core/
-│       │   ├── redis.py    
+│       │   ├── redis.py  
 │       │   ├── exceptions.py  
 │       │   ├── rate_limiter.py  
 │       │   └── guardrails.py   
@@ -200,7 +146,7 @@ CodePulse-AI/
 │           ├── project_parser.py   
 │           ├── dependency_builder.py 
 │           ├── workspace_manager.py 
-│           ├── llm_engine.py     
+│           ├── llm_engine.py   
 │           ├── cache_service.py   
 │           ├── job_service.py   
 │           ├── websocket_manager.py  
