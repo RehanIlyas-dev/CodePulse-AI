@@ -86,7 +86,7 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    # --> Retrieve the currently authenticated user based on the JWT token in the Authorization header.
+    """FastAPI dependency: resolves the User from a Bearer JWT."""
     if credentials is None:
         raise HTTPException(status_code=401, detail="Not authenticated. Sign in to continue.")
     payload = decode_token(credentials.credentials)
@@ -95,3 +95,18 @@ async def get_current_user(
     if not user:
         raise HTTPException(status_code=401, detail="User no longer exists.")
     return user
+
+
+async def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    # --> Optional User
+    if credentials is None or not JWT_SECRET:
+        return None
+    try:
+        payload = decode_token(credentials.credentials)
+    except HTTPException:
+        return None
+    result = await db.execute(select(User).filter(User.id == payload["sub"]))
+    return result.scalars().first()

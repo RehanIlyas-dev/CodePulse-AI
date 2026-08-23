@@ -17,6 +17,11 @@ FUNCTION_NODES = {
     "kotlin": {"function_declaration"},
     "csharp": {"method_declaration", "constructor_declaration", "local_function_statement"},
     "bash": {"function_definition"},
+    # Verified against grammar output (branch-heavy samples)
+    "lua": {"function_declaration", "function_definition"},
+    "scala": {"function_definition"},
+    "perl": {"subroutine_declaration_statement"},
+    "r": {"function_definition"},
 }
 
 # Per-language node types that represent a branch/loop decision (cyclomatic complexity).
@@ -35,6 +40,11 @@ DECISION_NODES = {
     "kotlin": {"if_expression", "when_expression", "for_statement", "while_statement", "do_while_statement", "catch_clause", "when_entry"},
     "csharp": {"if_statement", "for_statement", "foreach_statement", "while_statement", "do_statement", "switch_statement", "case", "catch_clause", "conditional_expression", "ternary_expression"},
     "bash": {"if_statement", "for_statement", "while_statement", "until_statement", "case_statement", "select_statement"},
+    # Verified against grammar output (branch-heavy samples)
+    "lua": {"if_statement", "for_statement", "while_statement"},
+    "scala": {"if_expression", "match_expression", "case_clause"},
+    "perl": {"if", "elsif", "while", "foreach", "for_statement"},
+    "r": {"if_statement", "for_statement", "while_statement"},
 }
 
 class UniversalTreeSitterEngine:

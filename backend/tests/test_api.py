@@ -39,16 +39,22 @@ async def test_job_status_not_found(async_client: AsyncClient):
     assert response.status_code == 404
 
 
-async def test_scans_endpoint_db_roundtrip(async_client: AsyncClient):
-    # --> Verify the scans endpoint returns expected data from the database.
-    response = await async_client.get("/api/v1/scans?limit=5")
+async def test_scans_endpoint_db_roundtrip(async_client: AsyncClient, authed_client: AsyncClient):
+    # --> History is private: anon gets 401, signed-in user gets their own list.
+    saved = async_client.headers.get("Authorization")
+    del async_client.headers["Authorization"]
+    anon = await async_client.get("/api/v1/scans?limit=5")
+    async_client.headers["Authorization"] = saved
+    assert anon.status_code == 401
+
+    response = await authed_client.get("/api/v1/scans?limit=5")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
 
-async def test_repo_scans_endpoint_db_roundtrip(async_client: AsyncClient):
-    # --> Verify the repo_scans endpoint returns expected data from the database.
-    response = await async_client.get("/api/v1/repo-scans?limit=5")
+async def test_repo_scans_endpoint_db_roundtrip(authed_client: AsyncClient):
+    # --> Same privacy rule for repo scans.
+    response = await authed_client.get("/api/v1/repo-scans?limit=5")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 

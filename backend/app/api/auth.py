@@ -2,8 +2,8 @@ import os
 from urllib.parse import urlencode
 import httpx
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
@@ -171,7 +171,53 @@ async def oauth_callback(
     await db.refresh(user)
 
     token = create_access_token(user)
-    return RedirectResponse(f"{FRONTEND_URL}/#token={token}")
+    refresh = create_refresh_token(user)
+
+    response = RedirectResponse(f"{FRONTEND_URL}/#token={token}")
+    response.set_cookie(
+        key=REFRESH_COOKIE,
+        value=refresh,
+        httponly=True,
+        samesite="lax",
+        secure=False,  # dev over http; flip True behind https
+        max_age=30 * 24 * 3600,
+        path="/api/v1/auth",
+    )
+    return response
+
+
+@router.post("/refresh")
+async def auth_refresh(request: Request, db: AsyncSession = Depends(get_db)):
+    # --> Refresh the access token using the refresh token stored in the httpOnly cookie.
+    raw = request.cookies.get(REFRESH_COOKIE)
+    if not raw:
+        raise HTTPException(status_code=401, detail="No refresh token.")
+    payload = decode_token(raw, expected_typ="refresh")
+    result = await db.execute(select(User).filter(User.id == payload["sub"]))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User no longer exists.")
+
+    response = JSONResponse({"access_token": create_access_token(user), "token_type": "bearer"})
+    # Rotate the refresh cookie on every use
+    response.set_cookie(
+        key=REFRESH_COOKIE,
+        value=create_refresh_token(user),
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        max_age=30 * 24 * 3600,
+        path="/api/v1/auth",
+    )
+    return response
+
+
+@router.post("/logout")
+async def auth_logout():
+    # --> Clear the refresh cookie; the client drops its access token too.
+    response = JSONResponse({"ok": True})
+    response.delete_cookie(key=REFRESH_COOKIE, path="/api/v1/auth")
+    return response
 
 
 @router.get("/me")

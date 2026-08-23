@@ -1,10 +1,18 @@
 import React from 'react';
 import { API_BASE_URL } from '../api/client';
 
-export default function LoginScreen({ authError }) {
+export default function LoginScreen({ authError, onClose }) {
   return (
     <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4 font-sans">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm relative">
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute -top-1 right-0 text-[11px] font-mono text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
+          >
+            ← back
+          </button>
+        )}
         {/* Brand */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-12 h-12 rounded-lg border border-brand-line bg-brand-surface flex items-center justify-center mb-5">

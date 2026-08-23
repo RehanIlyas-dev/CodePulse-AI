@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 
 const SUPPORTED_LANGUAGES = [
-  'python', 'javascript', 'typescript', 'rust',
-  'go', 'java', 'csharp', 'cpp', 'ruby', 'php',
+  'bash', 'c', 'cpp', 'csharp', 'go', 'java', 'javascript', 'kotlin',
+  'lua', 'perl', 'php', 'python', 'r', 'ruby', 'rust', 'scala', 'swift', 'typescript',
 ];
 
 export default function CodeEditor({ onSubmit, isLoading }) {

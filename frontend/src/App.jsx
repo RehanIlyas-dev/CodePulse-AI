@@ -5,6 +5,7 @@ import JobProgress from './components/JobProgress';
 import ReportView from './components/ReportView';
 import RepoReportView from './components/RepoReportView';
 import LoginScreen from './components/LoginScreen';
+import HistoryView from './components/HistoryView';
 import { submitCodeAnalysis, submitRepoAnalysis, getJobStatus, API_BASE_URL, setToken, clearToken, fetchMe, tryRefresh, logoutServer } from './api/client';
 import { connectJobWebSocket } from './api/websocket';
 
@@ -16,7 +17,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [apiOnline, setApiOnline] = useState(null);
   const [me, setMe] = useState(null);
-  const [booting, setBooting] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
   const socketRef = useRef(null);
 
@@ -36,9 +39,14 @@ export default function App() {
       }
       // No stored token? Try the httpOnly refresh cookie before giving up
       if (!localStorage.getItem('cp_token')) await tryRefresh();
-      const user = await fetchMe();
-      setMe(user);
-      setBooting(false);
+      setMe(await fetchMe());
+
+      // Returning from a failed/cancelled OAuth attempt -> show the Welcome page
+      const err = new URLSearchParams(window.location.search).get('auth_error');
+      if (err) {
+        setAuthError(err);
+        setShowWelcome(true);
+      }
     };
     boot();
   }, []);
@@ -115,22 +123,17 @@ export default function App() {
   const handleRepoSubmit = ({ githubUrl, file }) =>
     runJob(submitRepoAnalysis(githubUrl, file));
 
-  // Auth gate: splash while booting, login screen when signed out
-  if (booting) {
-    return (
-      <div className="min-h-screen bg-brand-bg flex items-center justify-center font-sans">
-        <div className="w-8 h-8 border-2 border-brand-line border-t-brand-accent rounded-full animate-spin" />
-      </div>
-    );
+  // The app is usable signed-out; only persistence requires an account
+  if (showWelcome) {
+    return <LoginScreen authError={authError} onClose={() => setShowWelcome(false)} />;
   }
 
-  if (!me) {
-    const params = new URLSearchParams(window.location.search);
-    return <LoginScreen authError={params.get('auth_error')} />;
+  if (showHistory) {
+    return <HistoryView onClose={() => setShowHistory(false)} />;
   }
 
   return (
-    <div className="min-h-screen bg-brand-bg flex flex-col font-sans">
+    <>
       {/* Top bar */}
       <header className="border-b border-brand-line bg-brand-surface/60 backdrop-blur sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
@@ -161,12 +164,18 @@ export default function App() {
               {apiOnline === null ? 'checking' : apiOnline ? 'api online' : 'api offline'}
             </span>
 
-            {me && (
+            {me ? (
               <span className="flex items-center gap-2">
                 {me.avatar_url && (
                   <img src={me.avatar_url} alt="" className="w-6 h-6 rounded-full border border-brand-line" />
                 )}
                 <span className="text-xs text-zinc-600 hidden sm:inline">{me.name || me.email}</span>
+                <button
+                  onClick={() => setShowHistory(true)}
+                  className="border border-brand-line hover:border-zinc-400 text-zinc-700 rounded-md px-2.5 py-1 transition-colors cursor-pointer"
+                >
+                  History
+                </button>
                 <button
                   onClick={handleLogout}
                   className="border border-brand-line hover:border-red-300 hover:text-red-500 rounded-md px-2 py-1 transition-colors cursor-pointer"
@@ -174,6 +183,13 @@ export default function App() {
                   sign out
                 </button>
               </span>
+            ) : (
+              <button
+                onClick={() => setShowWelcome(true)}
+                className="border border-brand-line hover:border-zinc-400 text-zinc-700 rounded-md px-2.5 py-1 transition-colors cursor-pointer"
+              >
+                Sign in
+              </button>
             )}
           </div>
         </div>
@@ -196,7 +212,7 @@ export default function App() {
             )}
 
             {!status && !report && (
-              <EmptyState />
+              <EmptyState signedIn={!!me} />
             )}
           </section>
         </div>
@@ -209,7 +225,7 @@ export default function App() {
           <span>localhost:8000/api/v1</span>
         </div>
       </footer>
-    </div>
+    </>
   );
 }
 
@@ -229,13 +245,19 @@ function PulseMark() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ signedIn }) {
   return (
     <div className="border border-dashed border-brand-line rounded-lg px-8 py-16 text-center">
       <p className="text-sm text-zinc-500">No report yet.</p>
       <p className="text-xs text-zinc-400 mt-1.5 max-w-xs mx-auto leading-relaxed">
         Paste a snippet on the left and run an analysis. Results stream in live over WebSocket.
       </p>
+      {!signedIn && (
+        <p className="text-[11px] font-mono text-brand-accent mt-3">Sign in to keep your history</p>
+      )}
+      {signedIn && (
+        <p className="text-[10px] font-mono text-zinc-400 mt-3">scans are saved to your history</p>
+      )}
     </div>
   );
 }
