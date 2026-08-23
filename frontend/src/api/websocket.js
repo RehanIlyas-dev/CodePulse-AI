@@ -1,8 +1,11 @@
+import { getToken } from './client';
+
 const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/api/v1';
 
-// --> Connect to WebSocket for job updates
+// --> Connect to WebSocket for job updates (token via query param — browsers can't set WS headers)
 export function connectJobWebSocket(jobId, onMessage, onError) {
-  const ws = new WebSocket(`${WS_BASE_URL}/ws/jobs/${jobId}`);
+  const token = getToken();
+  const ws = new WebSocket(`${WS_BASE_URL}/ws/jobs/${jobId}?token=${encodeURIComponent(token || '')}`);
 
   ws.onmessage = (event) => {
     try {

@@ -4,7 +4,8 @@ import RepoInput from './components/RepoInput';
 import JobProgress from './components/JobProgress';
 import ReportView from './components/ReportView';
 import RepoReportView from './components/RepoReportView';
-import { submitCodeAnalysis, submitRepoAnalysis, getJobStatus, API_BASE_URL, setToken, clearToken, fetchMe } from './api/client';
+import LoginScreen from './components/LoginScreen';
+import { submitCodeAnalysis, submitRepoAnalysis, getJobStatus, API_BASE_URL, setToken, clearToken, fetchMe, tryRefresh, logoutServer } from './api/client';
 import { connectJobWebSocket } from './api/websocket';
 
 export default function App() {
@@ -15,27 +16,35 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [apiOnline, setApiOnline] = useState(null);
   const [me, setMe] = useState(null);
+  const [booting, setBooting] = useState(true);
 
   const socketRef = useRef(null);
 
-  // Health ping + OAuth token capture on mount
+  // Boot: capture OAuth token -> silent refresh (cookie) -> resolve profile
   useEffect(() => {
     fetch(`${API_BASE_URL.replace('/api/v1', '')}/`)
       .then((r) => (r.ok ? setApiOnline(true) : setApiOnline(false)))
       .catch(() => setApiOnline(false));
 
-    // OAuth callback lands here as /#token=<jwt> — store and clean the URL
-    const hash = new URLSearchParams(window.location.hash.slice(1));
-    const incoming = hash.get('token');
-    if (incoming) {
-      setToken(incoming);
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-
-    fetchMe().then(setMe);
+    const boot = async () => {
+      // OAuth callback lands here as /#token=<jwt>
+      const hash = new URLSearchParams(window.location.hash.slice(1));
+      const incoming = hash.get('token');
+      if (incoming) {
+        setToken(incoming);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      // No stored token? Try the httpOnly refresh cookie before giving up
+      if (!localStorage.getItem('cp_token')) await tryRefresh();
+      const user = await fetchMe();
+      setMe(user);
+      setBooting(false);
+    };
+    boot();
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logoutServer();
     clearToken();
     setMe(null);
   };
@@ -106,6 +115,20 @@ export default function App() {
   const handleRepoSubmit = ({ githubUrl, file }) =>
     runJob(submitRepoAnalysis(githubUrl, file));
 
+  // Auth gate: splash while booting, login screen when signed out
+  if (booting) {
+    return (
+      <div className="min-h-screen bg-brand-bg flex items-center justify-center font-sans">
+        <div className="w-8 h-8 border-2 border-brand-line border-t-brand-accent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!me) {
+    const params = new URLSearchParams(window.location.search);
+    return <LoginScreen authError={params.get('auth_error')} />;
+  }
+
   return (
     <div className="min-h-screen bg-brand-bg flex flex-col font-sans">
       {/* Top bar */}
@@ -138,7 +161,7 @@ export default function App() {
               {apiOnline === null ? 'checking' : apiOnline ? 'api online' : 'api offline'}
             </span>
 
-            {me ? (
+            {me && (
               <span className="flex items-center gap-2">
                 {me.avatar_url && (
                   <img src={me.avatar_url} alt="" className="w-6 h-6 rounded-full border border-brand-line" />
@@ -150,21 +173,6 @@ export default function App() {
                 >
                   sign out
                 </button>
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <a
-                  href={`${API_BASE_URL}/auth/login/google`}
-                  className="border border-brand-line hover:border-zinc-400 text-zinc-700 rounded-md px-2.5 py-1 transition-colors"
-                >
-                  Sign in with Google
-                </a>
-                <a
-                  href={`${API_BASE_URL}/auth/login/github`}
-                  className="bg-zinc-900 hover:bg-black text-white rounded-md px-2.5 py-1 transition-colors"
-                >
-                  GitHub
-                </a>
               </span>
             )}
           </div>
