@@ -21,6 +21,7 @@ async def run_analysis_pipeline(
     code: str,
     language: str,
     code_hash: str,
+    user_id: str | None = None,
 ):
     """
     Executes AST parsing and AI auditing out-of-band in a background task,
@@ -29,6 +30,29 @@ async def run_analysis_pipeline(
     try:
         cached = await CacheService.get_cached_analysis(code_hash)
         if cached:
+            # A cached result may have been produced anonymously (no record id).
+            # Signed-in users still get a history row - no LLM call needed.
+            if user_id and not cached.get("id"):
+                scan_record = CodeScan(
+                    user_id=user_id,
+                    title=title,
+                    language=language,
+                    raw_code=code,
+                    ast_metrics=cached.get("ast_metrics"),
+                    time_complexity=cached["time_complexity"],
+                    space_complexity=cached["space_complexity"],
+                    security_score=cached["security_score"],
+                    maintainability_score=cached["maintainability_score"],
+                    refactored_code=cached["refactored_code"],
+                    issues_list=cached["issues_list"],
+                    summary_text=cached["summary_text"],
+                )
+                async with AsyncSessionLocal() as db:
+                    db.add(scan_record)
+                    await db.commit()
+                    await db.refresh(scan_record)
+                cached["id"] = str(scan_record.id)
+
             cached["cached"] = True
             await JobService.update_job(job_id, "CACHE_HIT", 100, cached)
             await ws_manager.send_progress(job_id, "CACHE_HIT", 100, cached)
@@ -52,28 +76,33 @@ async def run_analysis_pipeline(
             ast_metrics=ast_result
         )
 
-        # --> Persist scan record to PostgreSQL
-        scan_record = CodeScan(
-            title=title,
-            language=language,
-            raw_code=code,
-            ast_metrics=ast_result,
-            time_complexity=ai_result.time_complexity,
-            space_complexity=ai_result.space_complexity,
-            security_score=ai_result.security_score,
-            maintainability_score=ai_result.maintainability_score,
-            refactored_code=ai_result.refactored_code,
-            issues_list=[issue.model_dump() for issue in ai_result.issues],
-            summary_text=format_analysis_report(title, language, ast_result, ai_result),
-        )
-        async with AsyncSessionLocal() as db:
-            db.add(scan_record)
-            await db.commit()
-            await db.refresh(scan_record)
+        # --> Persist scan record to PostgreSQL (signed-in users only)
+        summary_text = format_analysis_report(title, language, ast_result, ai_result)
+        scan_record_id = None
+        if user_id:
+            scan_record = CodeScan(
+                user_id=user_id,
+                title=title,
+                language=language,
+                raw_code=code,
+                ast_metrics=ast_result,
+                time_complexity=ai_result.time_complexity,
+                space_complexity=ai_result.space_complexity,
+                security_score=ai_result.security_score,
+                maintainability_score=ai_result.maintainability_score,
+                refactored_code=ai_result.refactored_code,
+                issues_list=[issue.model_dump() for issue in ai_result.issues],
+                summary_text=summary_text,
+            )
+            async with AsyncSessionLocal() as db:
+                db.add(scan_record)
+                await db.commit()
+                await db.refresh(scan_record)
+            scan_record_id = str(scan_record.id)
 
         # --> Construct Output Payload
         response_payload = {
-            "id": str(scan_record.id),
+            "id": scan_record_id,
             "language": ast_result["language"],
             "ast_metrics": ast_result,
             "time_complexity": ai_result.time_complexity,
@@ -82,7 +111,7 @@ async def run_analysis_pipeline(
             "maintainability_score": ai_result.maintainability_score,
             "refactored_code": ai_result.refactored_code,
             "issues_list": [issue.model_dump() for issue in ai_result.issues],
-            "summary_text": scan_record.summary_text,
+            "summary_text": summary_text,
             "cached": False,
         }
 
@@ -106,7 +135,7 @@ async def run_analysis_pipeline(
         await JobService.update_job(job_id, "FAILED", 0, error_payload)
         await ws_manager.send_progress(job_id, "FAILED", 0, error_payload)
         
-async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str, repo_hash: str):
+async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str, repo_hash: str, user_id: str | None = None):
     """
     Background worker task for parsing and auditing an entire repository.
     Every supported file gets a full LLM analysis (bounded concurrency);
@@ -174,8 +203,9 @@ async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str, 
             ast_metrics={"language": "project_aggregate", "file_count": project_graph['summary']['total_files']}
         )
 
-        # --> Persist repository scan to PostgreSQL
+        # --> Persist repository scan to PostgreSQL (signed-in users only)
         repo_scan = RepoScan(
+            user_id=user_id,
             source=source,
             summary=project_graph["summary"],
             dependency_graph=project_graph["dependency_graph"],

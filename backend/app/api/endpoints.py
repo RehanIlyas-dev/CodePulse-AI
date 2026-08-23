@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSoc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from database import get_db
+from database import get_db, AsyncSessionLocal
 from app.models.scan import CodeScan
 from app.models.repo_scan import RepoScan
 from app.schemas.scan import ScanCreateRequest, ScanResponse, RepoScanResponse
@@ -19,7 +19,7 @@ from app.services.workspace_manager import WorkspaceManager
 from app.services.orchestrator import run_repo_analysis_pipeline
 from app.core.rate_limiter import RateLimiter
 from app.core.guardrails import PayloadGuardrails
-from app.core.security import get_current_user, decode_token
+from app.core.security import get_current_user, get_optional_user, decode_token
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1", tags=["scans"])
@@ -34,7 +34,7 @@ _rate_limiter = RateLimiter(requests_per_minute=10)
 @router.post("/analyze", status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(_rate_limiter)])
 async def analyze_code(
     request: ScanCreateRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_optional_user),
 ):
     # --> Validate payload size and detect minified code
     PayloadGuardrails.validate_code_snippet(request.code)
@@ -54,13 +54,16 @@ async def analyze_code(
             detail=f"Syntax errors detected in the submitted {request.language} code."
         )
 
-    # --> Kick off background analysis pipeline
+    # --> Kick off background analysis pipeline (persisted only for signed-in users)
     code_hash = CacheService.generate_code_hash(request.code, request.language)
     job_id = str(uuid.uuid4())
     await JobService.create_job(job_id)
-    
+
     task = asyncio.create_task(
-        run_analysis_pipeline(job_id, request.title, request.code, request.language, code_hash)
+        run_analysis_pipeline(
+            job_id, request.title, request.code, request.language, code_hash,
+            user_id=str(current_user.id) if current_user else None,
+        )
     )
     _background_tasks.add(task)
     task.add_done_callback(_background_tasks.discard)
@@ -110,11 +113,18 @@ async def job_websocket(websocket: WebSocket, job_id: str, token: Optional[str] 
 
 
 # --> Additional endpoints for retrieving scan records
-# Get all scans with pagination
+# Get all scans with pagination (history is private: only your own scans)
 @router.get("/scans", response_model=List[ScanResponse])
-async def get_all_scans(limit: int = 10, offset: int = 0, db: AsyncSession = Depends(get_db)):
+async def get_all_scans(
+    limit: int = 10,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     result = await db.execute(
-        select(CodeScan).order_by(CodeScan.created_at.desc()).offset(offset).limit(limit)
+        select(CodeScan)
+        .filter(CodeScan.user_id == current_user.id)
+        .order_by(CodeScan.created_at.desc()).offset(offset).limit(limit)
     )
     return result.scalars().all()
 
@@ -134,7 +144,7 @@ async def analyze_repository(
     background_tasks: BackgroundTasks,
     github_url: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_optional_user),
 ):
     if not github_url and not file:
         raise HTTPException(status_code=400, detail="Provide either a github_url or a .zip file upload.")
@@ -156,6 +166,26 @@ async def analyze_repository(
 
     cached = await CacheService.get_cached_analysis(repo_hash, key_prefix="repo:")
     if cached:
+        # Signed-in users get a history row even on cache hits (anon cache entries have no id)
+        if current_user is not None and not cached.get("id") and "summary" in cached:
+            repo_scan = RepoScan(
+                user_id=str(current_user.id),
+                source=source,
+                summary=cached.get("summary"),
+                dependency_graph=cached.get("dependency_graph"),
+                files=cached.get("files"),
+                architecture_score=cached.get("architecture_score", 0),
+                maintainability_score=cached.get("maintainability_score", 0),
+                refactored_suggestions=cached.get("refactored_suggestions", ""),
+                issues_list=cached.get("issues_list", []),
+                summary_text=cached.get("summary_text", ""),
+            )
+            async with AsyncSessionLocal() as db:
+                db.add(repo_scan)
+                await db.commit()
+                await db.refresh(repo_scan)
+            cached["id"] = str(repo_scan.id)
+
         cached["cached"] = True
         job_id = str(uuid.uuid4())
         await JobService.create_job(job_id)
@@ -180,7 +210,8 @@ async def analyze_repository(
             job_id=job_id,
             repo_path=sandbox_dir,
             source=source,
-            repo_hash=repo_hash
+            repo_hash=repo_hash,
+            user_id=str(current_user.id) if current_user else None,
         )
 
         return {"status": "PENDING", "job_id": job_id, "websocket_url": f"/api/v1/ws/jobs/{job_id}"}
@@ -190,11 +221,18 @@ async def analyze_repository(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-# --> Repository scan history
+# --> Repository scan history (private: only your own repo scans)
 @router.get("/repo-scans", response_model=List[RepoScanResponse])
-async def get_all_repo_scans(limit: int = 10, offset: int = 0, db: AsyncSession = Depends(get_db)):
+async def get_all_repo_scans(
+    limit: int = 10,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     result = await db.execute(
-        select(RepoScan).order_by(RepoScan.created_at.desc()).offset(offset).limit(limit)
+        select(RepoScan)
+        .filter(RepoScan.user_id == current_user.id)
+        .order_by(RepoScan.created_at.desc()).offset(offset).limit(limit)
     )
     return result.scalars().all()
 
