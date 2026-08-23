@@ -11,6 +11,24 @@ export default function HistoryView({ onClose }) {
   const [selectedRepoScan, setSelectedRepoScan] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Handle browser back button for detail views
+  useEffect(() => {
+    const handlePopState = () => {
+      if (selectedScan) setSelectedScan(null);
+      if (selectedRepoScan) setSelectedRepoScan(null);
+    };
+
+    // Push state when detail view opens
+    if (selectedScan) {
+      window.history.pushState({ scanId: selectedScan.id }, '');
+    } else if (selectedRepoScan) {
+      window.history.pushState({ repoScanId: selectedRepoScan.id }, '');
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [selectedScan, selectedRepoScan]);
+
   useEffect(() => {
     const loadHistory = async () => {
       setLoading(true);
@@ -65,7 +83,7 @@ export default function HistoryView({ onClose }) {
               </svg>
             </div>
             <div className="leading-none">
-              <span className="text-[15px] font-semibold text-zinc-100 tracking-tight">
+              <span className="text-[15px] font-semibold text-zinc-900 tracking-tight">
                 CodePulse<span className="text-brand-accent">-AI</span>
               </span>
               <span className="hidden sm:block text-[11px] text-zinc-500 mt-1">
