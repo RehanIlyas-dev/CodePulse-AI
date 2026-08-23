@@ -46,8 +46,10 @@ app = FastAPI(title="CodePulse AI ", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
+    allow_origins=[o.strip() for o in os.getenv(
+        "CORS_ORIGINS", "http://localhost:5174,http://localhost:5173"
+    ).split(",") if o.strip()],
+    allow_credentials=True,  # required for the httpOnly refresh cookie
     allow_methods=["*"],
     allow_headers=["*"],
 )

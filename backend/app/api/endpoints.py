@@ -19,7 +19,7 @@ from app.services.workspace_manager import WorkspaceManager
 from app.services.orchestrator import run_repo_analysis_pipeline
 from app.core.rate_limiter import RateLimiter
 from app.core.guardrails import PayloadGuardrails
-from app.core.security import get_current_user
+from app.core.security import get_current_user, decode_token
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1", tags=["scans"])
@@ -83,7 +83,17 @@ async def get_job(job_id: str):
 
 # WebSocket endpoint for live job progress
 @router.websocket("/ws/jobs/{job_id}")
-async def job_websocket(websocket: WebSocket, job_id: str):
+async def job_websocket(websocket: WebSocket, job_id: str, token: Optional[str] = None):
+    # --> Require a valid access token (sent as ?token= since browsers can't set WS headers)
+    if not token:
+        await websocket.close(code=4401)
+        return
+    try:
+        decode_token(token, expected_typ="access")
+    except HTTPException:
+        await websocket.close(code=4401)
+        return
+
     await ws_manager.connect(job_id, websocket)
     try:
         # Send the current job state immediately on connect
