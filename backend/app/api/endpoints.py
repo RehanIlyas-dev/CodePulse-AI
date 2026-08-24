@@ -87,15 +87,15 @@ async def get_job(job_id: str):
 # WebSocket endpoint for live job progress
 @router.websocket("/ws/jobs/{job_id}")
 async def job_websocket(websocket: WebSocket, job_id: str, token: Optional[str] = None):
-    # --> Require a valid access token (sent as ?token= since browsers can't set WS headers)
-    if not token:
-        await websocket.close(code=4401)
-        return
-    try:
-        decode_token(token, expected_typ="access")
-    except HTTPException:
-        await websocket.close(code=4401)
-        return
+    # --> Progress streaming is open to anonymous clients: the job_id is an
+    # unguessable UUID minted for this client (capability token). A supplied
+    # token must still be valid.
+    if token:
+        try:
+            decode_token(token, expected_typ="access")
+        except HTTPException:
+            await websocket.close(code=4401)
+            return
 
     await ws_manager.connect(job_id, websocket)
     try:
