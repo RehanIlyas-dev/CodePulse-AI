@@ -222,7 +222,7 @@ export default function App() {
       <footer className="border-t border-brand-line">
         <div className="max-w-7xl mx-auto px-6 h-9 flex items-center justify-between text-[11px] font-mono text-zinc-400">
           <span>© {new Date().getFullYear()} CodePulse-AI</span>
-          <span>localhost:8000/api/v1</span>
+          <span>{API_BASE_URL}</span>
         </div>
       </footer>
     </>
