@@ -16,7 +16,7 @@ load_dotenv()
 
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://opencode.ai/zen/v1").rstrip("/")
-LLM_MODEL = os.getenv("LLM_MODEL", "nemotron-3-ultra-free")
+LLM_MODEL = os.getenv("LLM_MODEL", "nemotron-3.5-lightning-free")
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "90"))
 
 client = httpx.AsyncClient(timeout=LLM_TIMEOUT)
