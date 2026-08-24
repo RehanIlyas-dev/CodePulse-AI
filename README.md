@@ -50,18 +50,18 @@
 git clone https://github.com/RehanIlyas-dev/CodePulse-AI && cd CodePulse-AI
 
 # backend
-cp backend/.env.example backend/.env        # fill in secrets
+cp backend/.env.example backend/.env      
 uv sync
-cd backend && ../.venv/bin/uvicorn main:app --reload   # :8000, docs at /docs
+cd backend && ../.venv/bin/uvicorn main:app --reload   
 
 # frontend (new terminal)
-cd frontend && npm install && npm run dev   # :5173
+cd frontend && npm install && npm run dev
 ```
 
 ### Full stack with Docker Compose
 
 ```bash
-docker compose up --build     # db + redis + api (:8001) + web (:5174)
+docker compose up --build
 ```
 
 ### Environment variables (`backend/.env`)
@@ -79,7 +79,7 @@ docker compose up --build     # db + redis + api (:8001) + web (:5174)
 ## Testing
 
 ```bash
-uv run pytest    # from repo root — ASGI in-process, real app lifespan, ~0.5s
+uv run pytest    # from repo root 
 ```
 
 Covers health, guardrails, job 404s, DB round-trips for both scan tables, and rate limiting. Tests never touch real Sentry.
@@ -165,8 +165,6 @@ CodePulse-AI/
 │       └── deploy.yml
 └── pyproject.toml
 ```
-
-
 
 ### Author
 
