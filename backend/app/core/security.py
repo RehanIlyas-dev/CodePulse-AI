@@ -1,5 +1,15 @@
+import logging
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
+
+JWT_SECRET = os.getenv("JWT_SECRET", "")
+if not JWT_SECRET:
+    JWT_SECRET = secrets.token_urlsafe(48)
+    logging.getLogger(__name__).warning(
+        "JWT_SECRET not set — using an ephemeral secret. "
+        "All sessions invalidate on restart. Set JWT_SECRET in your environment."
+    )
 import jwt
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
@@ -10,10 +20,6 @@ from database import get_db
 from app.models.user import User
 
 load_dotenv()
-
-JWT_SECRET = os.getenv("JWT_SECRET", "")
-if not JWT_SECRET:
-    raise RuntimeError("JWT_SECRET missing from environment")
 
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_TTL_MINUTES = 30
