@@ -1,4 +1,5 @@
 import logging
+import os
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -7,8 +8,26 @@ from fastapi.exceptions import RequestValidationError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("codepulse_error_logger")
 
+
+def _cors_headers(request: Request) -> dict:
+    # Starlette's error middleware sits OUTSIDE CORSMiddleware, so responses
+    # produced by these handlers would reach browsers without CORS headers and
+    # get misreported as network failures ("Failed to fetch") instead of the
+    # real status code. Echo the origin back when it is allow-listed.
+    origin = request.headers.get("origin")
+    if not origin:
+        return {}
+    allowed = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+    if origin in allowed:
+        return {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+        }
+    return {}
+
+
 def register_exception_handlers(app: FastAPI) -> None:
-    
+
     # --> Register global exception handlers for the FastAPI application
 
     @app.exception_handler(RequestValidationError)
@@ -19,7 +38,8 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "error": "Unprocessable Entity",
                 "details": exc.errors(),
                 "status_code": 422
-            }
+            },
+            headers=_cors_headers(request),
         )
 
     @app.exception_handler(Exception)
@@ -32,5 +52,6 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "error": "Internal Server Error",
                 "message": "An unexpected error occurred while processing your analysis. Please try again later.",
                 "status_code": 500
-            }
+            },
+            headers=_cors_headers(request),
         )

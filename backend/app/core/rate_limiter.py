@@ -17,12 +17,16 @@ class RateLimiter:
         current_minute = int(time.time()) // 60 # Get the current minute timestamp
         rate_key = f"rate_limit:{client_ip}:{current_minute}"
 
-        request_count = await client.incr(rate_key)
-        
-        if request_count == 1:
-            await client.expire(rate_key, 60)
-
         # Reject request if limits are exceeded
+        try:
+            request_count = await client.incr(rate_key)
+
+            if request_count == 1:
+                await client.expire(rate_key, 60)
+        except Exception:
+            # Fail open — a dead Redis must never take down the API.
+            return
+
         if request_count > self.requests_per_minute:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
