@@ -6,9 +6,11 @@ export function getToken() {
 }
 export function setToken(token) {
   localStorage.setItem('cp_token', token);
+  localStorage.setItem('cp_session', '1'); // remember this browser logged in once
 }
 export function clearToken() {
   localStorage.removeItem('cp_token');
+  localStorage.removeItem('cp_session');
 }
 
 function authHeaders(extra = {}) {

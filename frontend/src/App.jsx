@@ -38,8 +38,9 @@ export default function App() {
         setToken(incoming);
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
-      // No stored token? Try the httpOnly refresh cookie before giving up
-      if (!localStorage.getItem('cp_token')) await tryRefresh();
+      // No stored token? Probe the refresh cookie only for returning users —
+      // first-time visitors skip it (avoids a guaranteed 401 in console)
+      if (!localStorage.getItem('cp_token') && localStorage.getItem('cp_session')) await tryRefresh();
       setMe(await fetchMe());
 
       // Returning from a failed/cancelled OAuth attempt -> show the Welcome page
