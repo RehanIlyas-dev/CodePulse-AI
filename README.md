@@ -40,16 +40,16 @@
 
 ## The challenges this project solves
 
-| Challenge | Solution |
-|-----------|----------|
-| **Static analyzers are precise but shallow; LLMs understand code but hallucinate metrics** | Hybrid engine — tree-sitter computes ground-truth AST facts, the LLM audits on top of measured reality |
-| **Deep analysis takes 30–90s — too long for blocking HTTP** | Fully async pipeline: instant `202 + job_id`, live WebSocket progress, HTTP polling fallback |
-| **LLMs return prose, not structured data** | Pydantic-validated JSON contracts + regex extraction + corrective-hint retries (3× backoff) |
-| **Re-analyzing identical code wastes time and tokens** | Multi-layer caching: content-hash (snips), commit-SHA-aware (repos), content-addressed (ZIPs) → instant `CACHE_HIT` |
-| **Hundreds of files can't fit a context window** | Complexity-ranked top-20 file selection, semaphore-limited concurrency (3), dependency graph for context |
-| **History must be private per user** | OAuth JWTs + `user_id` scoping; anonymous use allowed without persistence |
-| **Raw LLM output isn't actionable** | Deterministic reports: scores /100, prioritized fixes, refactored code |
-| **Public AI endpoints get abused** | Rate limiting (10/min/IP), size caps, minified-code rejection, CORS allow-list, no internal leaks |
+| Challenge                                                                                        | Solution                                                                                                              |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| **Static analyzers are precise but shallow; LLMs understand code but hallucinate metrics** | Hybrid engine: tree-sitter computes ground-truth AST facts, the LLM audits on top of measured reality                |
+| **Deep analysis takes 30–90s   too long for blocking HTTP**                             | Fully async pipeline: instant`202 + job_id`, live WebSocket progress, HTTP polling fallback                         |
+| **LLMs return prose, not structured data**                                                 | Pydantic-validated JSON contracts + regex extraction + corrective-hint retries (3× backoff)                          |
+| **Re-analyzing identical code wastes time and tokens**                                     | Multi-layer caching: content-hash (snips), commit-SHA-aware (repos), content-addressed (ZIPs) → instant`CACHE_HIT` |
+| **Hundreds of files can't fit a context window**                                           | Complexity-ranked top-20 file selection, semaphore-limited concurrency (3), dependency graph for context              |
+| **History must be private per user**                                                       | OAuth JWTs +`user_id` scoping; anonymous use allowed without persistence                                            |
+| **Raw LLM output isn't actionable**                                                        | Deterministic reports: scores /100, prioritized fixes, refactored code                                                |
+| **Public AI endpoints get abused**                                                         | Rate limiting (10/min/IP), size caps, minified-code rejection, CORS allow-list, no internal leaks                     |
 
 ## Run locally
 
@@ -63,7 +63,7 @@
 git clone https://github.com/RehanIlyas-dev/CodePulse-AI && cd CodePulse-AI
 
 # backend
-cp backend/.env.example backend/.env      
+cp backend/.env.example backend/.env    
 uv sync
 cd backend && ../.venv/bin/uvicorn main:app --reload   
 
