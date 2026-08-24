@@ -141,8 +141,8 @@ async def run_repo_analysis_pipeline(job_id: str, repo_path: Path, source: str, 
     Every supported file gets a full LLM analysis (bounded concurrency);
     repos beyond MAX_LLM_FILES get deep analysis on the most complex files only.
     """
-    MAX_LLM_FILES = 20
-    MAX_FILE_CHARS = 50_000
+    MAX_LLM_FILES = 8
+    MAX_FILE_CHARS = 12_000
 
     try:
         await JobService.update_job(job_id, "PARSING_FILES", 20)

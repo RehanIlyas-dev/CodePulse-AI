@@ -19,7 +19,7 @@ LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://opencode.ai/zen/v1").rstrip("/
 LLM_MODEL = os.getenv("LLM_MODEL", "nemotron-3.5-lightning-free")
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "90"))
 
-client = httpx.AsyncClient(timeout=LLM_TIMEOUT)
+client = httpx.AsyncClient(timeout=httpx.Timeout(connect=10.0, read=LLM_TIMEOUT, write=30.0, pool=10.0))
 
 SYSTEM_PROMPT = """
 You are an expert static analysis engine and senior code reviewer.
