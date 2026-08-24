@@ -41,6 +41,11 @@ class WorkspaceManager:
                 timeout=60
             )
             return target_dir
+        except FileNotFoundError:
+            raise HTTPException(
+                status_code=500,
+                detail="git is not installed in the server environment."
+            )
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to clone repository: {str(e)}")
 
@@ -56,6 +61,11 @@ class WorkspaceManager:
                 timeout=15
             )
             return result.stdout.decode().split("\t")[0].strip()
+        except FileNotFoundError:
+            raise HTTPException(
+                status_code=500,
+                detail="git is not installed in the server environment."
+            )
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to reach repository: {str(e)}")
 
