@@ -22,6 +22,7 @@ export default function App() {
   const [authError, setAuthError] = useState(null);
 
   const socketRef = useRef(null);
+  const pollRef = useRef(null);
 
   // Boot: capture OAuth token -> silent refresh (cookie) -> resolve profile
   useEffect(() => {
@@ -64,11 +65,46 @@ export default function App() {
     }
   };
 
-  useEffect(() => () => closeSocket(), []);
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
+  // Poll job state until a terminal status — used as fallback when WS dies,
+  // so the UI never freezes mid-run.
+  const startPolling = (jobId) => {
+    stopPolling();
+    pollRef.current = setInterval(async () => {
+      try {
+        const jobResult = await getJobStatus(jobId);
+        if (jobResult.status) setStatus(jobResult.status);
+        if (typeof jobResult.progress === 'number') setProgress(jobResult.progress);
+
+        if (jobResult.status === 'COMPLETED' || jobResult.status === 'CACHE_HIT') {
+          setReport(jobResult.data);
+          setLoading(false);
+          stopPolling();
+          closeSocket();
+        } else if (jobResult.status === 'FAILED') {
+          setError(jobResult.data?.error || 'Job analysis failed.');
+          setLoading(false);
+          stopPolling();
+          closeSocket();
+        }
+      } catch {
+        /* transient — keep polling until terminal or unmount */
+      }
+    }, 3000);
+  };
+
+  useEffect(() => () => { closeSocket(); stopPolling(); }, []);
 
   // Shared flow: submit a job, then track it over WebSocket (HTTP fallback)
   const runJob = async (submitPromise) => {
     closeSocket();
+    stopPolling();
     setLoading(true);
     setError(null);
     setReport(null);
@@ -96,18 +132,9 @@ export default function App() {
           }
         },
         async () => {
-          // WebSocket unavailable — fall back to one HTTP poll
+          // WebSocket unavailable — keep the UI alive via HTTP polling
           console.warn('WebSocket error, falling back to HTTP polling...');
-          try {
-            const jobResult = await getJobStatus(activeJobId);
-            setStatus(jobResult.status);
-            if (jobResult.data) setReport(jobResult.data);
-          } catch {
-            setError('Failed to track job progress via fallback.');
-          } finally {
-            setLoading(false);
-            closeSocket();
-          }
+          startPolling(activeJobId);
         }
       );
     } catch (err) {
