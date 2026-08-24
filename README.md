@@ -99,38 +99,72 @@ Pushes to `main` trigger GitHub Actions (lint + tests) and platform auto-deploys
 ```
 CodePulse-AI/
 ├── backend/
-│   ├── main.py                  # app factory, lifespan, Sentry init
-│   ├── database.py              # async engine + session
-│   ├── tests/                   # pytest suite
+│   ├── main.py                          # FastAPI app, lifespan (DDL + Redis init), Sentry init
+│   ├── database.py                      # async engine + session factory
+│   ├── demo_test.py                     # manual end-to-end demo script
+│   ├── tests/
+│   │   ├── conftest.py                  # LifesManager fixture, SENTRY_DSN blanking
+│   │   └── test_api.py                  # 7 API + DB round-trip tests
 │   └── app/
 │       ├── api/
-│       │   ├── endpoints.py     # analyze / analyze-repo / jobs / ws / history
-│       │   └── auth.py          # OAuth flow + refresh/logout/me
-│       ├── core/                # redis, security (JWT), rate limiter,
-│       │                        # guardrails, exception handlers
-│       ├── models/              # User, CodeScan, RepoScan (SQLAlchemy)
-│       ├── schemas/             # Pydantic v2 contracts
-│       └── services/            # orchestrator, tree_sitter_engine, llm_engine,
-│                                # project_parser, dependency_builder, workspace_manager,
-│                                # cache_service, job_service, websocket_manager,
-│                                # report_formatter
+│       │   ├── endpoints.py             # analyze / analyze-repo / jobs / ws / history endpoints
+│       │   └── auth.py                  # OAuth2 login/callback/refresh/logout/me (Google + GitHub)
+│       ├── core/
+│       │   ├── security.py              # JWT issue/verify, bearer deps, ephemeral-secret fallback
+│       │   ├── redis.py                 # async client; pings at startup, nulls on failure
+│       │   ├── rate_limiter.py          # 10 req/min/IP sliding window (fails open)
+│       │   ├── guardrails.py            # payload size caps, minified/zip checks
+│       │   └── exceptions.py            # global handlers with CORS echo
+│       ├── models/
+│       │   ├── user.py                  # OAuth user model
+│       │   ├── scan.py                  # CodeScan table (JSONB metrics/issues)
+│       │   └── repo_scan.py             # RepoScan table (files + aggregate audit)
+│       ├── schemas/
+│       │   └── scan.py                  # Pydantic v2 request/response contracts
+│       └── services/
+│           ├── orchestrator.py          # code & repo pipelines (background tasks)
+│           ├── tree_sitter_engine.py    # AST metrics for 18 languages
+│           ├── project_parser.py        # repo file discovery (clone/zip → sources)
+│           ├── dependency_builder.py    # import graph across repo files
+│           ├── workspace_manager.py     # git clone / zip extract / cleanup
+│           ├── llm_engine.py            # opencode Zen client, retries, JSON repair
+│           ├── cache_service.py         # analysis/repo caches (SHA-keyed, TTL 24h)
+│           ├── job_service.py           # job:<uuid> state in Redis (fail-soft)
+│           ├── websocket_manager.py     # live progress broadcasting
+│           └── report_formatter.py      # plain-text report builder
 ├── frontend/
+│   ├── Dockerfile                       # node build → nginx static serve
+│   ├── vercel.json                      # vite preset + SPA rewrites
+│   ├── package.json
+│   ├── vite.config.js                   # react + tailwind plugins
+│   ├── index.html
+│   ├── public/
+│   │   └── favicon.svg                  # brand pulse mark
 │   └── src/
-│       ├── App.jsx              # editor, repo input, live progress, routing
-│       ├── api/client.js        # authed fetch + silent refresh
-│       ├── api/websocket.js     # wss progress streaming
-│       └── components/          # LoginScreen, ReportView, RepoReportView,
-│                                # HistoryView, JobProgress, CodeEditor…
-├── Dockerfile                   # backend image (uv + git)
-├── docker-compose.yml           # postgres + redis + api + web
-├── railway.toml                 # deploy config
-└── .github/workflows/deploy.yml # CI: ruff + pytest (+ deploy hooks)
-```
+│       ├── main.jsx                     # entry
+│       ├── App.jsx                      # layout, editor, tabs, live status
+│       ├── App.css
+│       ├── index.css                    # Tailwind theme tokens (--color-brand-*)
+│       ├── api/
+│       │   ├── client.js                # authed fetch + silent refresh wrapper
+│       │   └── websocket.js             # wss:// progress streaming
+│       └── components/
+│           ├── LoginScreen.jsx          # Google/GitHub sign-in
+│           ├── CodeEditor.jsx           # snippet input
+│           ├── RepoInput.jsx            # github url / zip upload
+│           ├── JobProgress.jsx          # live progress bar
+│           ├── ReportView.jsx           # code scan report
+│           ├── RepoReportView.jsx       # per-file + project audit view
+│           ├── HistoryView.jsx          # private scan history (tabs)
+│           └── EmptyState.jsx           # empty placeholder
+├── Dockerfile                           # backend image: uv sync + git
+├── docker-compose.yml                   # postgres + redis + api (:8001) + web (:5174)
+├── railway.toml                         # Railway deploy config (sh -c start command)
+├── .github/
+│   └── workflows/
+│       └── deploy.yml                   # CI: uv sync → ruff → pytest (+ deploy hooks)
+└── pyproject.toml                       # deps + uv.lock (repo-root managed)
 
-## License
-
-Private project.
-
----
+### Author
 
 Made with ❤️ by [Rehan](https://github.com/RehanIlyas-dev)
