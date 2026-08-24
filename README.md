@@ -19,7 +19,7 @@
 | ---------------------------- | -------------------------------------------------------------------------------------- |
 | Backend                      | FastAPI (async), Python 3.14, uv-managed deps                                          |
 | Static analysis              | tree-sitter + tree-sitter-language-pack (18 languages)                                 |
-| AI audit                     | opencode Zen gateway —`nemotron-3-ultra-free`, httpx client                         |
+| AI audit                     | Groq gateway —`openai/gpt-oss-120b`, httpx client                         |
 | Database                     | PostgreSQL (Supabase, asyncpg + SQLAlchemy 2.0)                                        |
 | Cache / jobs / rate limiting | Redis (redis-py asyncio)                                                               |
 | Auth                         | OAuth2 (Google + GitHub) → JWT access tokens + httpOnly rotating refresh cookies      |
@@ -57,7 +57,7 @@
 
 - Python 3.12+ with [uv](https://docs.astral.sh/uv/)
 - PostgreSQL + Redis running locally (or use Docker Compose below)
-- `LLM_API_KEY` from [opencode Zen](https://opencode.ai/zen)
+- `LLM_API_KEY` from [Groq console](https://console.groq.com)
 
 ```bash
 git clone https://github.com/RehanIlyas-dev/CodePulse-AI && cd CodePulse-AI
@@ -84,7 +84,7 @@ docker compose up --build
 | `DATABASE_URL`                                         | `postgresql+asyncpg://user:pass@host:5432/db` | `+asyncpg` driver required                            |
 | `REDIS_URL`                                            | `redis://localhost:6379/0`                    | optional — degrades gracefully                         |
 | `JWT_SECRET`                                           | `openssl rand -hex 32`                        | ephemeral random fallback if unset (warns)              |
-| `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL`       | opencode Zen creds                              | defaults baked in for base/model                        |
+| `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL`       | Groq API key (console.groq.com)                              | defaults baked in for base/model                        |
 | `GOOGLE_CLIENT_ID/SECRET`, `GITHUB_CLIENT_ID/SECRET` | OAuth apps                                      | callback URIs under`/api/v1/auth/callback/{provider}` |
 | `FRONTEND_URL`, `CORS_ORIGINS`, `API_PUBLIC_BASE`  | your origins                                    | comma-separated for multiple                            |
 | `SENTRY_DSN`                                           | optional                                        | empty disables reporting                                |
