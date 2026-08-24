@@ -1,0 +1,442 @@
+- generic [ref=f7e4]:
+  - banner [ref=f7e6]:
+    - generic [ref=f7e7]:
+      - link [ref=f7e8] [cursor=pointer]:
+        - /url: /dashboard
+        - img "Railway Logo" [ref=f7e10]
+      - generic [ref=f7e13]:
+        - button "harmonious-balance" [ref=f7e16] [cursor=pointer]:
+          - generic "Rehan Ilyas's Projects" [ref=f7e17]
+        - button "production" [ref=f7e25] [cursor=pointer]
+    - navigation [ref=f7e30]:
+      - generic [ref=f7e32]:
+        - button "Toggle activity" [ref=f7e34] [cursor=pointer]
+        - button "Notifications" [ref=f7e38] [cursor=pointer]
+        - button "15 days or $4.10 left" [ref=f7e45] [cursor=pointer]:
+          - paragraph [ref=f7e47]:
+            - generic [ref=f7e48]: 15 days or $4.10 left
+  - generic [ref=f7e49]:
+    - navigation "Project navigation" [ref=f7e50]:
+      - generic [ref=f7e51]:
+        - link "Architecture" [ref=f7e54] [cursor=pointer]:
+          - /url: /project/0fbda7db-7dc1-4cf3-85ee-648863a3e0cd?environmentId=93dabc2e-e8b2-4037-a9b5-12cc7a547504
+        - link "Observability" [ref=f7e62] [cursor=pointer]:
+          - /url: /project/0fbda7db-7dc1-4cf3-85ee-648863a3e0cd/observability?environmentId=93dabc2e-e8b2-4037-a9b5-12cc7a547504
+        - link "Logs" [ref=f7e67] [cursor=pointer]:
+          - /url: /project/0fbda7db-7dc1-4cf3-85ee-648863a3e0cd/logs?environmentId=93dabc2e-e8b2-4037-a9b5-12cc7a547504
+        - link "Settings" [ref=f7e73] [cursor=pointer]:
+          - /url: /project/0fbda7db-7dc1-4cf3-85ee-648863a3e0cd/settings?environmentId=93dabc2e-e8b2-4037-a9b5-12cc7a547504
+      - button [ref=f7e78] [cursor=pointer]:
+        - generic "Rehan Ilyas" [ref=f7e80]
+    - region [ref=f7e86]:
+      - generic [ref=f7e91]:
+        - generic [ref=f7e93]:
+          - generic [ref=f7e94]:
+            - generic [ref=f7e95]:
+              - generic [ref=f7e96]:
+                - generic: Filter and search logs
+                - textbox [ref=f7e97]
+              - generic [ref=f7e98]: /
+            - generic [ref=f7e100]:
+              - button "Last 15 min" [ref=f7e101] [cursor=pointer]
+              - button "Pause live updates" [ref=f7e107]
+            - button "Options" [ref=f7e111] [cursor=pointer]
+          - generic [ref=f7e116]:
+            - generic:
+              - generic: 17:53
+              - generic: 18:08
+        - table [ref=f7e452]:
+          - rowgroup [ref=f7e453]:
+            - row [ref=f7e454]:
+              - columnheader [ref=f7e455]
+              - columnheader [ref=f7e459]
+              - columnheader "Data" [ref=f7e463]
+              - columnheader [ref=f7e465]:
+                - button "Layout settings" [ref=f7e466] [cursor=pointer]
+          - rowgroup [ref=f7e473]:
+            - row [ref=f7e474]:
+              - cell [ref=f7e475]:
+                - generic [ref=f7e477]:
+                  - text: You reached the start of the range
+                  - time [ref=f7e481]: 2026-08-24 17:53
+            - row [ref=f7e482] [cursor=pointer]:
+              - cell [ref=f7e483]:
+                - generic [ref=f7e484]:
+                  - button [ref=f7e485]
+                  - time [ref=f7e488]: 2026-08-24 18:02:51
+              - cell [ref=f7e489]:
+                - button "Redis" [ref=f7e490]
+              - cell "1:M 24 Aug 2026 13:02:46.789 * 1 changes in 60 seconds. Saving..." [ref=f7e491]
+            - row [ref=f7e494] [cursor=pointer]:
+              - cell [ref=f7e495]:
+                - generic [ref=f7e496]:
+                  - button [ref=f7e497]
+                  - time [ref=f7e500]: 2026-08-24 18:02:51
+              - cell [ref=f7e501]:
+                - button "Redis" [ref=f7e502]
+              - cell "1:M 24 Aug 2026 13:02:46.789 * Background saving started by pid 42" [ref=f7e503]
+            - row [ref=f7e506] [cursor=pointer]:
+              - cell [ref=f7e507]:
+                - generic [ref=f7e508]:
+                  - button [ref=f7e509]
+                  - time [ref=f7e512]: 2026-08-24 18:02:51
+              - cell [ref=f7e513]:
+                - button "Redis" [ref=f7e514]
+              - cell "42:C 24 Aug 2026 13:02:46.800 * DB saved on disk" [ref=f7e515]
+            - row [ref=f7e518] [cursor=pointer]:
+              - cell [ref=f7e519]:
+                - generic [ref=f7e520]:
+                  - button [ref=f7e521]
+                  - time [ref=f7e524]: 2026-08-24 18:02:51
+              - cell [ref=f7e525]:
+                - button "Redis" [ref=f7e526]
+              - 'cell "42:C 24 Aug 2026 13:02:46.800 * Fork CoW for RDB: current 0 MB, peak 0 MB, average 0 MB" [ref=f7e527]'
+            - row [ref=f7e530] [cursor=pointer]:
+              - cell [ref=f7e531]:
+                - generic [ref=f7e532]:
+                  - button [ref=f7e533]
+                  - time [ref=f7e536]: 2026-08-24 18:02:51
+              - cell [ref=f7e537]:
+                - button "Redis" [ref=f7e538]
+              - cell "1:M 24 Aug 2026 13:02:46.890 * Background saving terminated with success" [ref=f7e539]
+            - row [ref=f7e542] [cursor=pointer]:
+              - cell [ref=f7e543]:
+                - generic [ref=f7e544]:
+                  - button [ref=f7e545]
+                  - time [ref=f7e548]: 2026-08-24 18:02:57
+              - cell [ref=f7e549]:
+                - button "CodePulse-AI" [ref=f7e550]
+              - 'cell "INFO: 100.64.0.2:19770 - \"POST /api/v1/analyze-repo HTTP/1.1\" 202 Accepted" [ref=f7e551]'
+            - row [ref=f7e554] [cursor=pointer]:
+              - cell [ref=f7e555]:
+                - generic [ref=f7e556]:
+                  - button [ref=f7e557]
+                  - time [ref=f7e560]: 2026-08-24 18:03:00
+              - cell [ref=f7e561]:
+                - button "CodePulse-AI" [ref=f7e562]
+              - 'cell "INFO: 100.64.0.3:13786 - \"GET /api/v1/jobs/46982d5d-e012-4659-8dae-5be3ab14c79b HTTP/1.1\" 200 OK" [ref=f7e563]'
+            - row [ref=f7e566] [cursor=pointer]:
+              - cell [ref=f7e567]:
+                - generic [ref=f7e568]:
+                  - button [ref=f7e569]
+                  - time [ref=f7e572]: 2026-08-24 18:03:20
+              - cell [ref=f7e573]:
+                - button "CodePulse-AI" [ref=f7e574]
+              - 'cell "INFO: 100.64.0.4:61766 - \"POST /api/v1/analyze-repo HTTP/1.1\" 202 Accepted" [ref=f7e575]'
+            - row [ref=f7e578] [cursor=pointer]:
+              - cell [ref=f7e579]:
+                - generic [ref=f7e580]:
+                  - button [ref=f7e581]
+                  - time [ref=f7e584]: 2026-08-24 18:03:30
+              - cell [ref=f7e585]:
+                - button "CodePulse-AI" [ref=f7e586]
+              - 'cell "INFO: 100.64.0.5:44594 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e587]'
+            - row [ref=f7e590] [cursor=pointer]:
+              - cell [ref=f7e591]:
+                - generic [ref=f7e592]:
+                  - button [ref=f7e593]
+                  - time [ref=f7e596]: 2026-08-24 18:03:49
+              - cell [ref=f7e597]:
+                - button "CodePulse-AI" [ref=f7e598]
+              - 'cell "INFO: 100.64.0.6:29168 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e599]'
+            - row [ref=f7e602] [cursor=pointer]:
+              - cell [ref=f7e603]:
+                - generic [ref=f7e604]:
+                  - button [ref=f7e605]
+                  - time [ref=f7e608]: 2026-08-24 18:03:51
+              - cell [ref=f7e609]:
+                - button "Redis" [ref=f7e610]
+              - cell "1:M 24 Aug 2026 13:03:47.073 * 1 changes in 60 seconds. Saving..." [ref=f7e611]
+            - row [ref=f7e614] [cursor=pointer]:
+              - cell [ref=f7e615]:
+                - generic [ref=f7e616]:
+                  - button [ref=f7e617]
+                  - time [ref=f7e620]: 2026-08-24 18:03:51
+              - cell [ref=f7e621]:
+                - button "Redis" [ref=f7e622]
+              - cell "1:M 24 Aug 2026 13:03:47.074 * Background saving started by pid 43" [ref=f7e623]
+            - row [ref=f7e626] [cursor=pointer]:
+              - cell [ref=f7e627]:
+                - generic [ref=f7e628]:
+                  - button [ref=f7e629]
+                  - time [ref=f7e632]: 2026-08-24 18:03:51
+              - cell [ref=f7e633]:
+                - button "Redis" [ref=f7e634]
+              - cell "43:C 24 Aug 2026 13:03:47.080 * DB saved on disk" [ref=f7e635]
+            - row [ref=f7e638] [cursor=pointer]:
+              - cell [ref=f7e639]:
+                - generic [ref=f7e640]:
+                  - button [ref=f7e641]
+                  - time [ref=f7e644]: 2026-08-24 18:03:51
+              - cell [ref=f7e645]:
+                - button "Redis" [ref=f7e646]
+              - 'cell "43:C 24 Aug 2026 13:03:47.080 * Fork CoW for RDB: current 0 MB, peak 0 MB, average 0 MB" [ref=f7e647]'
+            - row [ref=f7e650] [cursor=pointer]:
+              - cell [ref=f7e651]:
+                - generic [ref=f7e652]:
+                  - button [ref=f7e653]
+                  - time [ref=f7e656]: 2026-08-24 18:03:51
+              - cell [ref=f7e657]:
+                - button "Redis" [ref=f7e658]
+              - cell "1:M 24 Aug 2026 13:03:47.174 * Background saving terminated with success" [ref=f7e659]
+            - row [ref=f7e662] [cursor=pointer]:
+              - cell [ref=f7e663]:
+                - generic [ref=f7e664]:
+                  - button [ref=f7e665]
+                  - time [ref=f7e668]: 2026-08-24 18:03:55
+              - cell [ref=f7e669]:
+                - button "CodePulse-AI" [ref=f7e670]
+              - 'cell "INFO: 100.64.0.7:56498 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e671]'
+            - row [ref=f7e674] [cursor=pointer]:
+              - cell [ref=f7e675]:
+                - generic [ref=f7e676]:
+                  - button [ref=f7e677]
+                  - time [ref=f7e680]: 2026-08-24 18:04:15
+              - cell [ref=f7e681]:
+                - button "CodePulse-AI" [ref=f7e682]
+              - 'cell "INFO: 100.64.0.8:27884 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e683]'
+            - row [ref=f7e686] [cursor=pointer]:
+              - cell [ref=f7e687]:
+                - generic [ref=f7e688]:
+                  - button [ref=f7e689]
+                  - time [ref=f7e692]: 2026-08-24 18:04:21
+              - cell [ref=f7e693]:
+                - button "CodePulse-AI" [ref=f7e694]
+              - 'cell "INFO: 100.64.0.2:37124 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e695]'
+            - row [ref=f7e698] [cursor=pointer]:
+              - cell [ref=f7e699]:
+                - generic [ref=f7e700]:
+                  - button [ref=f7e701]
+                  - time [ref=f7e704]: 2026-08-24 18:04:41
+              - cell [ref=f7e705]:
+                - button "CodePulse-AI" [ref=f7e706]
+              - 'cell "INFO: 100.64.0.4:27128 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e707]'
+            - row [ref=f7e710] [cursor=pointer]:
+              - cell [ref=f7e711]:
+                - generic [ref=f7e712]:
+                  - button [ref=f7e713]
+                  - time [ref=f7e716]: 2026-08-24 18:04:47
+              - cell [ref=f7e717]:
+                - button "CodePulse-AI" [ref=f7e718]
+              - 'cell "INFO: 100.64.0.9:51616 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e719]'
+            - row [ref=f7e722] [cursor=pointer]:
+              - cell [ref=f7e723]:
+                - generic [ref=f7e724]:
+                  - button [ref=f7e725]
+                  - time [ref=f7e728]: 2026-08-24 18:04:49
+              - cell [ref=f7e729]:
+                - button "CodePulse-AI" [ref=f7e730]
+              - cell "WARNING:app.services.llm_engine:LLM connection error (attempt 1/3):" [ref=f7e731]
+            - row [ref=f7e734] [cursor=pointer]:
+              - cell [ref=f7e735]:
+                - generic [ref=f7e736]:
+                  - button [ref=f7e737]
+                  - time [ref=f7e740]: 2026-08-24 18:04:49
+              - cell [ref=f7e741]:
+                - button "CodePulse-AI" [ref=f7e742]
+              - cell "WARNING:app.services.llm_engine:LLM connection error (attempt 1/3):" [ref=f7e743]
+            - row [ref=f7e746] [cursor=pointer]:
+              - cell [ref=f7e747]:
+                - generic [ref=f7e748]:
+                  - button [ref=f7e749]
+                  - time [ref=f7e752]: 2026-08-24 18:04:49
+              - cell [ref=f7e753]:
+                - button "CodePulse-AI" [ref=f7e754]
+              - cell "WARNING:app.services.llm_engine:LLM connection error (attempt 1/3):" [ref=f7e755]
+            - row [ref=f7e758] [cursor=pointer]:
+              - cell [ref=f7e759]:
+                - generic [ref=f7e760]:
+                  - button [ref=f7e761]
+                  - time [ref=f7e764]: 2026-08-24 18:05:09
+              - cell [ref=f7e765]:
+                - button "CodePulse-AI" [ref=f7e766]
+              - 'cell "INFO: 100.64.0.9:12322 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e767]'
+            - row [ref=f7e770] [cursor=pointer]:
+              - cell [ref=f7e771]:
+                - generic [ref=f7e772]:
+                  - button [ref=f7e773]
+                  - time [ref=f7e776]: 2026-08-24 18:05:13
+              - cell [ref=f7e777]:
+                - button "CodePulse-AI" [ref=f7e778]
+              - 'cell "INFO: 100.64.0.10:38892 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e779]'
+            - row [ref=f7e782] [cursor=pointer]:
+              - cell [ref=f7e783]:
+                - generic [ref=f7e784]:
+                  - button [ref=f7e785]
+                  - time [ref=f7e788]: 2026-08-24 18:05:32
+              - cell [ref=f7e789]:
+                - button "CodePulse-AI" [ref=f7e790]
+              - 'cell "INFO: 100.64.0.2:10814 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e791]'
+            - row [ref=f7e794] [cursor=pointer]:
+              - cell [ref=f7e795]:
+                - generic [ref=f7e796]:
+                  - button [ref=f7e797]
+                  - time [ref=f7e800]: 2026-08-24 18:05:38
+              - cell [ref=f7e801]:
+                - button "CodePulse-AI" [ref=f7e802]
+              - 'cell "INFO: 100.64.0.11:18768 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e803]'
+            - row [ref=f7e806] [cursor=pointer]:
+              - cell [ref=f7e807]:
+                - generic [ref=f7e808]:
+                  - button [ref=f7e809]
+                  - time [ref=f7e812]: 2026-08-24 18:05:58
+              - cell [ref=f7e813]:
+                - button "CodePulse-AI" [ref=f7e814]
+              - 'cell "INFO: 100.64.0.4:34108 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e815]'
+            - row [ref=f7e818] [cursor=pointer]:
+              - cell [ref=f7e819]:
+                - generic [ref=f7e820]:
+                  - button [ref=f7e821]
+                  - time [ref=f7e824]: 2026-08-24 18:06:04
+              - cell [ref=f7e825]:
+                - button "CodePulse-AI" [ref=f7e826]
+              - 'cell "INFO: 100.64.0.8:28976 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e827]'
+            - row [ref=f7e830] [cursor=pointer]:
+              - cell [ref=f7e831]:
+                - generic [ref=f7e832]:
+                  - button [ref=f7e833]
+                  - time [ref=f7e836]: 2026-08-24 18:06:24
+              - cell [ref=f7e837]:
+                - button "CodePulse-AI" [ref=f7e838]
+              - 'cell "INFO: 100.64.0.12:56436 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e839]'
+            - row [ref=f7e842] [cursor=pointer]:
+              - cell [ref=f7e843]:
+                - generic [ref=f7e844]:
+                  - button [ref=f7e845]
+                  - time [ref=f7e848]: 2026-08-24 18:06:24
+              - cell [ref=f7e849]:
+                - button "CodePulse-AI" [ref=f7e850]
+              - cell "WARNING:app.services.llm_engine:LLM connection error (attempt 2/3):" [ref=f7e851]
+            - row [ref=f7e854] [cursor=pointer]:
+              - cell [ref=f7e855]:
+                - generic [ref=f7e856]:
+                  - button [ref=f7e857]
+                  - time [ref=f7e860]: 2026-08-24 18:06:24
+              - cell [ref=f7e861]:
+                - button "CodePulse-AI" [ref=f7e862]
+              - cell "WARNING:app.services.llm_engine:LLM connection error (attempt 2/3):" [ref=f7e863]
+            - row [ref=f7e866] [cursor=pointer]:
+              - cell [ref=f7e867]:
+                - generic [ref=f7e868]:
+                  - button [ref=f7e869]
+                  - time [ref=f7e872]: 2026-08-24 18:06:24
+              - cell [ref=f7e873]:
+                - button "CodePulse-AI" [ref=f7e874]
+              - cell "WARNING:app.services.llm_engine:LLM connection error (attempt 2/3):" [ref=f7e875]
+            - row [ref=f7e878] [cursor=pointer]:
+              - cell [ref=f7e879]:
+                - generic [ref=f7e880]:
+                  - button [ref=f7e881]
+                  - time [ref=f7e884]: 2026-08-24 18:06:29
+              - cell [ref=f7e885]:
+                - button "CodePulse-AI" [ref=f7e886]
+              - 'cell "INFO: 100.64.0.9:27842 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e887]'
+            - row [ref=f7e890] [cursor=pointer]:
+              - cell [ref=f7e891]:
+                - generic [ref=f7e892]:
+                  - button [ref=f7e893]
+                  - time [ref=f7e896]: 2026-08-24 18:06:49
+              - cell [ref=f7e897]:
+                - button "CodePulse-AI" [ref=f7e898]
+              - 'cell "INFO: 100.64.0.4:21416 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e899]'
+            - row [ref=f7e902] [cursor=pointer]:
+              - cell [ref=f7e903]:
+                - generic [ref=f7e904]:
+                  - button [ref=f7e905]
+                  - time [ref=f7e908]: 2026-08-24 18:06:55
+              - cell [ref=f7e909]:
+                - button "CodePulse-AI" [ref=f7e910]
+              - 'cell "INFO: 100.64.0.6:27624 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e911]'
+            - row [ref=f7e914] [cursor=pointer]:
+              - cell [ref=f7e915]:
+                - generic [ref=f7e916]:
+                  - button [ref=f7e917]
+                  - time [ref=f7e920]: 2026-08-24 18:07:15
+              - cell [ref=f7e921]:
+                - button "CodePulse-AI" [ref=f7e922]
+              - 'cell "INFO: 100.64.0.13:61180 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e923]'
+            - row [ref=f7e926] [cursor=pointer]:
+              - cell [ref=f7e927]:
+                - generic [ref=f7e928]:
+                  - button [ref=f7e929]
+                  - time [ref=f7e932]: 2026-08-24 18:07:21
+              - cell [ref=f7e933]:
+                - button "CodePulse-AI" [ref=f7e934]
+              - 'cell "INFO: 100.64.0.5:55068 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e935]'
+            - row [ref=f7e938] [cursor=pointer]:
+              - cell [ref=f7e939]:
+                - generic [ref=f7e940]:
+                  - button [ref=f7e941]
+                  - time [ref=f7e944]: 2026-08-24 18:07:41
+              - cell [ref=f7e945]:
+                - button "CodePulse-AI" [ref=f7e946]
+              - 'cell "INFO: 100.64.0.6:14390 - \"GET /api/v1/jobs/2468d97f-cb41-430b-8675-ff5e09431896 HTTP/1.1\" 200 OK" [ref=f7e947]'
+            - row [ref=f7e950] [cursor=pointer]:
+              - cell [ref=f7e951]:
+                - generic [ref=f7e952]:
+                  - button [ref=f7e953]
+                  - time [ref=f7e956]: 2026-08-24 18:08:01
+              - cell [ref=f7e957]:
+                - button "CodePulse-AI" [ref=f7e958]
+              - cell "WARNING:app.services.llm_engine:LLM connection error (attempt 3/3):" [ref=f7e959]
+            - row [ref=f7e962] [cursor=pointer]:
+              - cell [ref=f7e963]:
+                - generic [ref=f7e964]:
+                  - button [ref=f7e965]
+                  - time [ref=f7e968]: 2026-08-24 18:08:01
+              - cell [ref=f7e969]:
+                - button "CodePulse-AI" [ref=f7e970]
+              - cell "WARNING:app.services.llm_engine:LLM connection error (attempt 3/3):" [ref=f7e971]
+            - row [ref=f7e974] [cursor=pointer]:
+              - cell [ref=f7e975]:
+                - generic [ref=f7e976]:
+                  - button [ref=f7e977]
+                  - time [ref=f7e980]: 2026-08-24 18:08:01
+              - cell [ref=f7e981]:
+                - button "CodePulse-AI" [ref=f7e982]
+              - cell "WARNING:app.services.llm_engine:LLM connection error (attempt 3/3):" [ref=f7e983]
+            - row [ref=f7e986] [cursor=pointer]:
+              - cell [ref=f7e987]:
+                - generic [ref=f7e988]:
+                  - button [ref=f7e989]
+                  - time [ref=f7e992]: 2026-08-24 18:08:01
+              - cell [ref=f7e993]:
+                - button "Redis" [ref=f7e994]
+              - cell "1:M 24 Aug 2026 13:07:55.578 * 1 changes in 60 seconds. Saving..." [ref=f7e995]
+            - row [ref=f7e998] [cursor=pointer]:
+              - cell [ref=f7e999]:
+                - generic [ref=f7e1000]:
+                  - button [ref=f7e1001]
+                  - time [ref=f7e1004]: 2026-08-24 18:08:01
+              - cell [ref=f7e1005]:
+                - button "Redis" [ref=f7e1006]
+              - cell "1:M 24 Aug 2026 13:07:55.578 * Background saving started by pid 44" [ref=f7e1007]
+            - row [ref=f7e1010] [cursor=pointer]:
+              - cell [ref=f7e1011]:
+                - generic [ref=f7e1012]:
+                  - button [ref=f7e1013]
+                  - time [ref=f7e1016]: 2026-08-24 18:08:01
+              - cell [ref=f7e1017]:
+                - button "Redis" [ref=f7e1018]
+              - cell "44:C 24 Aug 2026 13:07:55.591 * DB saved on disk" [ref=f7e1019]
+            - row [ref=f7e1022] [cursor=pointer]:
+              - cell [ref=f7e1023]:
+                - generic [ref=f7e1024]:
+                  - button [ref=f7e1025]
+                  - time [ref=f7e1028]: 2026-08-24 18:08:01
+              - cell [ref=f7e1029]:
+                - button "Redis" [ref=f7e1030]
+              - 'cell "44:C 24 Aug 2026 13:07:55.591 * Fork CoW for RDB: current 0 MB, peak 0 MB, average 0 MB" [ref=f7e1031]'
+            - row [ref=f7e1034] [cursor=pointer]:
+              - cell [ref=f7e1035]:
+                - generic [ref=f7e1036]:
+                  - button [ref=f7e1037]
+                  - time [ref=f7e1040]: 2026-08-24 18:08:01
+              - cell [ref=f7e1041]:
+                - button "Redis" [ref=f7e1042]
+              - cell "1:M 24 Aug 2026 13:07:55.680 * Background saving terminated with success" [ref=f7e1043]
+            - row [ref=f7e1046]:
+              - cell [ref=f7e1047]
+          - generic [ref=f7e1048]:
+            - button "Jump to top" [ref=f7e1049] [cursor=pointer]
+            - button "Jump to bottom" [disabled] [ref=f7e1053]

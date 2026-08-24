@@ -36,7 +36,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_BASE_URL: https://opencode.ai/zen/v1
-      LLM_MODEL: nemotron-3.5-lightning-free
+      LLM_MODEL: nemotron-3-ultra-free
       SENTRY_DSN: ""
       ENVIRONMENT: development
       CORS_ORIGINS: http://localhost:5173,http://localhost:4173

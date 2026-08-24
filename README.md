@@ -19,7 +19,7 @@
 | ---------------------------- | -------------------------------------------------------------------------------------- |
 | Backend                      | FastAPI (async), Python 3.14, uv-managed deps                                          |
 | Static analysis              | tree-sitter + tree-sitter-language-pack (18 languages)                                 |
-| AI audit                     | opencode Zen gateway —`nemotron-3.5-lightning-free`, httpx client                         |
+| AI audit                     | opencode Zen gateway —`nemotron-3-ultra-free`, httpx client                         |
 | Database                     | PostgreSQL (Supabase, asyncpg + SQLAlchemy 2.0)                                        |
 | Cache / jobs / rate limiting | Redis (redis-py asyncio)                                                               |
 | Auth                         | OAuth2 (Google + GitHub) → JWT access tokens + httpOnly rotating refresh cookies      |
