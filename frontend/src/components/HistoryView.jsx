@@ -108,7 +108,7 @@ export default function HistoryView({ onClose }) {
           {/* Tabs */}
           <div className="flex gap-4 border-b border-brand-line mb-6">
             <button
-              onClick={() => setActiveTab('scans')}
+              onClick={() => { setActiveTab('scans'); closeDetail(); }}
               className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                 activeTab === 'scans'
                   ? 'bg-brand-accent text-zinc-950'
@@ -118,7 +118,7 @@ export default function HistoryView({ onClose }) {
               Code Scans ({scans.length})
             </button>
             <button
-              onClick={() => setActiveTab('repo-scans')}
+              onClick={() => { setActiveTab('repo-scans'); closeDetail(); }}
               className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
                 activeTab === 'repo-scans'
                   ? 'bg-brand-accent text-zinc-950'
